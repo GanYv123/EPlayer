@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <signal.h>
 
 class CFunctionBase //脱离模板创建成员变量
 {
@@ -140,6 +141,35 @@ public:
 		return 0;
 	}
 
+	static int SwitchDaemon() {
+		// 1. Fork 子进程
+		pid_t ret = fork();
+		if (ret == -1) return -1;
+		if (ret > 0) exit(0); // 2. 主进程到此退出
+		// 3. 子进程 setsid 创建一个新的会话，并使子进程成为该会话的首进程
+		ret = setsid();
+		if (ret == -1) return -2;
+		// 4. 立即再 fork 一次，确保子进程不能再获取控制终端
+		ret = fork();
+		if (ret == -1) return -3;
+		if (ret > 0) exit(0); // 5. 第二次 fork 的子进程退出，孙进程继续
+		// 6. 设置信号处理，忽略 SIGCHLD
+		signal(SIGCHLD, SIG_IGN);
+		// 7. 更改当前工作目录为根目录，避免阻止文件系统卸载
+		/*
+		if (chdir("/") == -1) {
+			return -4;
+		}
+		//*/
+		// 8. 关闭标准输入、输出和错误输出
+		for (int i = 0; i < 3; ++i) close(i);
+		// 9. 清除文件权限掩码
+		umask(0);
+		// 守护进程启动成功
+		return 0;
+	}
+
+
 private:
 	CFunctionBase* m_func;
 	pid_t m_pid;
@@ -167,8 +197,8 @@ int CreateClientSerevr(CProcess* proc) {
 }
 
 int main() {
+	//CProcess::SwitchDaemon();
 	CProcess procLog, procClients;
-
 	printf("%s(%d):<%s> pid=%d\n", __FILE__, __LINE__, __FUNCTION__, getpid());
 	procLog.SetEntryFunction(CreateLogServer, &procLog);
 	int ret = procLog.CreateSubProcess();
