@@ -30,7 +30,7 @@ private:
     epoll_data_t m_data;
 };
 
-using EPEvents = std::vector<epoll_event>;
+using EP_EVENTS = std::vector<epoll_event>;
 
 class CEpoll {
 public:
@@ -38,15 +38,15 @@ public:
     ~CEpoll() { Close(); }
     CEpoll(const CEpoll&) = delete;
     CEpoll& operator=(const CEpoll&) = delete;
-    operator int() const { return m_epoll; }
+    explicit operator int() const { return m_epoll; }
 
     int Create(unsigned count) {
         if (m_epoll != -1) return -1;
-        m_epoll = epoll_create(count);
+        m_epoll = epoll_create(static_cast<int>(count));
         return m_epoll == -1 ? -2 : 0;
     }
     //小于0表示错误 等于0表示没有事情发送，大于0表示成功拿到事件
-    ssize_t WaitEvents(EPEvents& events, int timeout = 10) {
+    ssize_t WaitEvents(EP_EVENTS& events, int timeout = 10) const {
 	    if (m_epoll == -1) return -1;
 	    std::vector<epoll_event> evs(EVENT_SIZE);
 	    int ret = epoll_wait(m_epoll, evs.data(), static_cast<int>(evs.size()), timeout);
@@ -58,19 +58,19 @@ public:
         return ret;  // 返回事件的数量
     }
 
-    int Add(int fd, const EpollData& data = EpollData(nullptr), uint32_t events = EPOLLIN) {
+    int Add(int fd, const EpollData& data = EpollData(nullptr), uint32_t events = EPOLLIN) const {
         if (m_epoll == -1) return -1;
         epoll_event ev = { events, data };
         return epoll_ctl(m_epoll, EPOLL_CTL_ADD, fd, &ev) == -1 ? -2 : 0;
     }
 
-    int Modify(int fd, uint32_t events, const EpollData& data = EpollData(nullptr)) {
+    int Modify(int fd, uint32_t events, const EpollData& data = EpollData(nullptr)) const {
         if (m_epoll == -1) return -1;
         epoll_event ev = { events, data };
         return epoll_ctl(m_epoll, EPOLL_CTL_MOD, fd, &ev) == -1 ? -2 : 0;
     }
 
-    int Del(int fd) {
+    int Del(int fd) const {
         if (m_epoll == -1) return -1;
         return epoll_ctl(m_epoll, EPOLL_CTL_DEL, fd, nullptr) == -1 ? -2 : 0;
     }

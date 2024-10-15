@@ -82,6 +82,7 @@
     <ClInclude Include="Epoll.h" />
     <ClInclude Include="Function.h" />
     <ClInclude Include="Process.h" />
+    <ClInclude Include="Socket.h" />
   </ItemGroup>
   <ItemDefinitionGroup />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

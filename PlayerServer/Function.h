@@ -6,7 +6,7 @@
 class CFunctionBase //脱离模板创建成员变量
 {
 public:
-	virtual ~CFunctionBase() {}
+	virtual ~CFunctionBase() = default;
 	virtual int operator()() = 0;
 protected:
 private:
@@ -20,7 +20,8 @@ public:
 	}
 	virtual ~CFunction() {
 	}
-	virtual int operator()() {
+
+	int operator()() override {
 		return m_binder();// 调用绑定的函数对象
 	}
 	typename std::_Bindres_helper<int, _FUNCTION_, _ARGS_...>::type m_binder;
