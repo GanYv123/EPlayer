@@ -72,7 +72,7 @@ public:
 
 		printf("%s(%d):<%s> fd=%d\n", __FILE__, __LINE__, __FUNCTION__, fd);
 		printf("%s(%d):<%s> pipes[1]=%d\n", __FILE__, __LINE__, __FUNCTION__, pipes[1]);
-		printf("%s(%d):<%s> msg size:=%d msg_addr:%08x\n", __FILE__, __LINE__, __FUNCTION__, sizeof(msg), &msg);
+		printf("%s(%d):<%s> msg size:=%lu msg_addr:%8p\n", __FILE__, __LINE__, __FUNCTION__, sizeof(msg), &msg);
 		ssize_t ret = sendmsg(pipes[1], &msg, 0);
 		printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
 
