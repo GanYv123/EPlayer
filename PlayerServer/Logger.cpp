@@ -62,60 +62,74 @@ LogInfo::LogInfo(const char* file, int line,
 	int level, void* pData, size_t nSize)
 {
 	constexpr char sLevel[][8] = {
-		"INFO","DEBUG","WARNING","ERROR","FATAL"
+		"INFO", "DEBUG", "WARNING", "ERROR", "FATAL"
 	};
-	char* buf = nullptr;
-	bAuto = false;
-	int count = asprintf(
-		&buf, "%s(%d):[%s][%s]<%d-%d>(%s)\n",
-		file, line, sLevel[level],
-		static_cast<char*>(CLoggerServer::GetTimeStr()), pid, tid, func
-	);
-	if(count > 0){
-		m_buf = buf;
-		free(buf);
-	} else return;
 
-	Buffer out;
-	size_t i = 0;
-	auto Data = static_cast<char*>(pData);
-	for(; i < nSize; i++){
-		char buf[16]{ "" };
-		snprintf(buf, sizeof(buf), "%02X ", Data[i] & 0xFF);
+	bAuto = false;
+
+	// 临时指针，用于接收 asprintf 动态分配的内存
+	char* buf = nullptr;
+
+	// 缓存时间字符串以避免重复调用
+	auto timeStr = CLoggerServer::GetTimeStr();
+
+	// 调用 asprintf 格式化日志头信息
+	int count = asprintf(&buf, "%s(%d):[%s][%s]<%d-%d>(%s)\n",
+		file, line, sLevel[level],
+		static_cast<char*>(timeStr), pid, tid, func);
+
+	if(count > 0){
+		// 如果 asprintf 成功，将 buf 中的内容追加到 m_buf
 		m_buf += buf;
+		// 释放动态分配的内存
+		free(buf);
+	} else{
+		// 如果 asprintf 失败，直接返回
+		return;
+	}
+
+	auto Data = static_cast<char*>(pData);
+	size_t bufSize = nSize * 4;  // 预估缓冲区大小，保证足够存储十六进制和可视化字符
+	std::string hexBuffer;
+	hexBuffer.reserve(bufSize);  // 避免多次内存重新分配
+
+	for(size_t i = 0; i < nSize; i++){
+		char hex[4];  // 仅需 3 个字符空间: "XX "
+		snprintf(hex, sizeof(hex), "%02X ", Data[i] & 0xFF);
+		hexBuffer += hex;
+
 		if(0 == (i + 1) % 16){
-			m_buf += "\t;";
-			char buf[17]{ "" };
-			memcpy(buf, Data + i - 15, 16);
-			for(int j = 0; j < 16; j++)
-				if((buf[j] < 32) && (buf[j] >= 0)) buf[j] = '.';
-			m_buf += buf;
-			/*
-			for(size_t j = i - 15; j <= i; j++){
-				if(((Data[j] & 0xFF) > 31) && ((Data[j] & 0xFF) < 0x7F)){
-					m_buf += Data[i];
-				} else{
-					m_buf += '.';
-				}
+			hexBuffer += "\t;";  // 行结束符
+
+			char ascii[17] = { 0 };  // 用于存储 ASCII 表示的字符
+			for(size_t j = 0; j < 16; j++){
+				unsigned char ch = Data[i - 15 + j];
+				ascii[j] = (ch >= 32 && ch <= 126) ? ch : '.';  // 可打印字符范围：32-126
 			}
-			*/
-			m_buf += '\n';
+			hexBuffer += ascii;
+			hexBuffer += '\n';
 		}
 	}
-	//处理尾巴
-	const size_t k = i % 16;
-	if(k != 0){
-		for(size_t j = 0; j < 16 - k; j++) m_buf += "   ";
-		m_buf += "\t;";
-		for(size_t j = i - k; j <= i; j++){
-			if(((Data[j] & 0xFF) > 31) && ((Data[j] & 0xFF) < 0x7F)){
-				m_buf += Data[i];
-			} else{
-				m_buf += '.';
-			}
+
+	// 如果有剩余未满16字节的数据，也要处理
+	size_t remainder = nSize % 16;
+	if(remainder > 0){
+		// 填充剩余部分
+		for(size_t i = remainder; i < 16; i++){
+			hexBuffer += "   ";  // 每个字节三个字符："XX "
 		}
+		hexBuffer += "\t;";
+		for(size_t i = 0; i < remainder; i++){
+			unsigned char ch = Data[nSize - remainder + i];
+			hexBuffer += (ch >= 32 && ch <= 126) ? ch : '.';
+		}
+		hexBuffer += '\n';
 	}
+
+	// 将格式化的 hexBuffer 附加到 m_buf
+	m_buf += hexBuffer;
 }
+
 
 LogInfo::~LogInfo(){
 	if(bAuto){
