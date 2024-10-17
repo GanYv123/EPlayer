@@ -38,14 +38,21 @@ public:
     ~CEpoll() { Close(); }
     CEpoll(const CEpoll&) = delete;
     CEpoll& operator=(const CEpoll&) = delete;
-    explicit operator int() const { return m_epoll; }
+    operator int() const { return m_epoll; }
 
     int Create(unsigned count) {
         if (m_epoll != -1) return -1;
         m_epoll = epoll_create(static_cast<int>(count));
         return m_epoll == -1 ? -2 : 0;
     }
-    //小于0表示错误 等于0表示没有事情发送，大于0表示成功拿到事件
+   
+
+    /**
+     * 小于0表示错误 等于0表示没有事情发送，大于0表示成功拿到事件
+     * @param events EP_EVENTS& events
+     * @param timeout ms
+     * @return 返回事件的数量
+     */
     ssize_t WaitEvents(EP_EVENTS& events, int timeout = 10) const {
 	    if (m_epoll == -1) return -1;
 	    std::vector<epoll_event> evs(EVENT_SIZE);

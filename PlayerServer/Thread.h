@@ -32,7 +32,7 @@ public:
 	template<typename _FUNCTION_, typename... _ARGS_>
 	int SetThreadFunc(_FUNCTION_ func, _ARGS_... args) {
 		m_function(new CFunction<_FUNCTION_, _ARGS_...>(func, args...));
-
+		if (m_function == nullptr) return -1;
 		return 0;
 	}
 	int Start() {
@@ -80,6 +80,7 @@ public:
 		}
 		return 0;
 	}
+	//判断线程是否有效 ？<return m_thread == 0;>
 	bool IsValid() const {
 		return m_thread == 0;
 	}

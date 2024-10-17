@@ -1,5 +1,6 @@
 ﻿#include "Function.h"
 #include "Process.h"
+#include "Logger.h"
 
 int CreateLogServer(CProcess* proc) {
 	printf("%s(%d):<%s> pid=%d\n", __FILE__, __LINE__, __FUNCTION__, getpid());
