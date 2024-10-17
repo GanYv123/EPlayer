@@ -42,8 +42,8 @@ public:
 		if (ret != 0) return -1;
 		ret = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 		if (ret != 0) return -2;
-		ret = pthread_attr_setscope(&attr, PTHREAD_SCOPE_PROCESS);
-		if (ret != 0) return -3;
+		//ret = pthread_attr_setscope(&attr, PTHREAD_SCOPE_PROCESS);
+		//if (ret != 0) return -3;
 		ret = pthread_create(&m_thread, &attr, &CThread::ThreadEntry, this);
 		if (ret != 0) return -4;
 		m_mapThread[m_thread] = this;
@@ -80,15 +80,13 @@ public:
 		}
 		return 0;
 	}
-	//判断线程是否有效 ？<return m_thread == 0;>
-	bool IsValid() const {
-		return m_thread == 0;
-	}
+	//判断线程是否有效
+	bool IsValid() const { return m_thread != 0; }
 protected:
 	//__stdcall
 	static void* ThreadEntry(void* arg) {
 		const auto thiz = static_cast<CThread*>(arg);
-		struct sigaction act = {0};
+		struct sigaction act = { 0 };
 		sigemptyset(&act.sa_mask);
 		act.sa_flags = SA_SIGINFO;
 		act.sa_sigaction = &CThread::Sigaction;

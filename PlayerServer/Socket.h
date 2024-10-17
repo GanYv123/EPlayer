@@ -8,12 +8,13 @@
 #include <arpa/inet.h>
 #include <string>
 
-class Buffer : public std::string {
+class Buffer : public std::string
+{
 public:
 	Buffer() : std::string() {}
 	Buffer(size_t size) :std::string() { resize(size); }
-	Buffer(const std::string& str): std::string(str){}
-	Buffer(const char* str): std::string(str){}
+	Buffer(const std::string& str) : std::string(str){}
+	Buffer(const char* str) : std::string(str){}
 
 public:
 	// 返回一个非 const 的 char* 指针
@@ -24,15 +25,17 @@ public:
 
 #include <cstdint> // 包含 uint8_t 的定义
 
-enum SockAttr {// NOLINT(performance-enum-size)
-	// 使用 int 作为底层类型  
+enum SockAttr
+{// NOLINT(performance-enum-size)
+// 使用 int 作为底层类型  
 	SOCK_IS_SERVER = 1,	// 是否服务器 1{服务器} 0{客户端}
 	SOCK_IS_NON_BLOCK = 2,	// 是否阻塞 1{非阻塞} 0{阻塞}
 	SOCK_IS_UDP = 4,	// 1{UDP} 0{TCP} 
 };
 
 
-class CSockParam {
+class CSockParam
+{
 public:
 	CSockParam()
 		: port(-1), attr(0)	//默认是客户端、阻塞、tcp
@@ -71,7 +74,7 @@ public:
 	}
 public:
 	CSockParam& operator=(const CSockParam& param) {
-		if (this != &param) {
+		if(this != &param){
 			ip = param.ip;
 			port = param.port;
 			attr = param.attr;
@@ -99,7 +102,8 @@ public:
 /**
  * 套接字基类
  */
-class CSocketBase {
+class CSocketBase
+{
 public:
 	CSocketBase() {
 		m_socket = -1;
@@ -123,7 +127,8 @@ public:
 	//关闭连接
 	virtual int Close() {
 		m_status = 3; //设置为关闭状态
-		if (m_socket != -1) {
+		if(m_socket != -1){
+			unlink(m_param.ip);
 			const int fd = m_socket;
 			m_socket = -1;
 			close(fd);
@@ -147,11 +152,12 @@ private:
 /**
  * 本地套接字封装类
  */
-class CLocalSocket : public CSocketBase {
+class CLocalSocket : public CSocketBase
+{
 public:
 	CLocalSocket() : CSocketBase() {}
 
-	explicit CLocalSocket(const int sock): CSocketBase() {
+	explicit CLocalSocket(const int sock) : CSocketBase() {
 		m_socket = sock;
 	}
 	~CLocalSocket() override {
@@ -164,65 +170,66 @@ public:
 	客户端 套接字
 	*/
 	int Init(const CSockParam& param) override {
-		if  (m_status != 0) return -1;
+		if(m_status != 0) return -1;
 		m_param = param;
 		const int type = (param.attr & SOCK_IS_UDP) ? SOCK_DGRAM : SOCK_STREAM;
-		if (m_socket == -1)
+		if(m_socket == -1){
 			m_socket = socket(PF_LOCAL, type, 0);
-		if (m_socket == -1) return -2;
-		int ret{ 0 };
-		if(m_param.attr&SOCK_IS_SERVER){
-			ret = bind(m_socket, m_param.addrun(), sizeof(sockaddr_un));
-			if (ret == -1) return -3;
-			ret = listen(m_socket, 32);
-			if (ret == -1) return -4;
+		} else{
+			m_status = 2; //accept来的套接字,已经处于连接状态
 		}
-		if(m_param.attr&SOCK_IS_NON_BLOCK){
+		if(m_socket == -1) return -2;
+		int ret{ 0 };
+		if(m_param.attr & SOCK_IS_SERVER){
+			ret = bind(m_socket, m_param.addrun(), sizeof(sockaddr_un));
+			if(ret == -1) return -3;
+			ret = listen(m_socket, 32);
+			if(ret == -1) return -4;
+		}
+		if(m_param.attr & SOCK_IS_NON_BLOCK){
 			int option = fcntl(m_socket, F_GETFL);
-			if (option == -1) return -5;
+			if(option == -1) return -5;
 			option |= O_NONBLOCK;
 			ret = fcntl(m_socket, F_SETFL, option);
-			if (ret == -1) return -6;
+			if(ret == -1) return -6;
 		}
-		m_status = 1;
-
+		if(m_status == 0)m_status = 1;
 		return 0;
 	}
 	//S C 连接 对于UDP可忽略
 	int Link(CSocketBase** pClient = nullptr) override {
-		if (m_status <= 0 || (m_socket == -1)) return -1;
+		if(m_status <= 0 || (m_socket == -1)) return -1;
 		int ret{ 0 };
-		if(m_param.attr&SOCK_IS_SERVER){
-			if (pClient == nullptr) return -2;
+		if(m_param.attr & SOCK_IS_SERVER){
+			if(pClient == nullptr) return -2;
 			CSockParam param;
 			socklen_t len = sizeof(sockaddr_un);
-			const int fd = accept(m_socket,param.addrun(), &len);
-			if (fd == -1)return -3;
+			const int fd = accept(m_socket, param.addrun(), &len);
+			if(fd == -1)return -3;
 			*pClient = new CLocalSocket(fd);
-			if (*pClient == nullptr) return -4;
+			if(*pClient == nullptr) return -4;
 			ret = (*pClient)->Init(param);
-			if (ret != 0){
+			if(ret != 0){
 				delete (*pClient);
 				*pClient = nullptr;
 				return -5;
 			}
-		}
-		else{
+		} else{
 			//客户端
 			ret = connect(m_socket, m_param.addrun(), sizeof(sockaddr_un));
-			if (ret != 0) return -6;
+			if(ret != 0) return -6;
 		}
 		m_status = 2;//连接完成
 		return 0;
 	}
 	//发送数据
 	int Send(const Buffer& data) override {
-		if (m_status < 2 || (m_socket == -1)) return -1;
+		if(m_status < 2 || (m_socket == -1)) return -1;
 		ssize_t index = 0;
-		while (index < static_cast<ssize_t>(data.size())){
+		while(index < static_cast<ssize_t>(data.size())){
 			const ssize_t len = write(m_socket, static_cast<char*>(data) + index, data.size() - index);
-			if (len == 0) return -2;//closed
-			if (len < 0) return -3;
+			if(len == 0) return -2;//closed
+			if(len < 0) return -3;
 			index += len;
 		}
 		return 0;
@@ -237,7 +244,7 @@ public:
 	 * -3{套接字关闭}
 	 */
 	int Recv(Buffer& data) override {
-		if (m_status < 2 || (m_socket == -1)) return -1;
+		if(m_status < 2 || (m_socket == -1)) return -1;
 		const ssize_t len = read(m_socket, data, data.size());
 		if(len > 0){
 			data.resize(len);

@@ -29,6 +29,7 @@ LogInfo::LogInfo(
 		m_buf += buf;
 		free(buf);
 	}
+	m_buf += '\n';
 	va_end(ap);
 	//1
 }
@@ -84,6 +85,12 @@ LogInfo::LogInfo(const char* file, int line,
 		m_buf += buf;
 		if(0 == (i + 1) % 16){
 			m_buf += "\t;";
+			char buf[17]{ "" };
+			memcpy(buf, Data + i - 15, 16);
+			for(int j = 0; j < 16; j++)
+				if((buf[j] < 32) && (buf[j] >= 0)) buf[j] = '.';
+			m_buf += buf;
+			/*
 			for(size_t j = i - 15; j <= i; j++){
 				if(((Data[j] & 0xFF) > 31) && ((Data[j] & 0xFF) < 0x7F)){
 					m_buf += Data[i];
@@ -91,6 +98,7 @@ LogInfo::LogInfo(const char* file, int line,
 					m_buf += '.';
 				}
 			}
+			*/
 			m_buf += '\n';
 		}
 	}
@@ -111,19 +119,27 @@ LogInfo::LogInfo(const char* file, int line,
 
 LogInfo::~LogInfo(){
 	if(bAuto){
+		m_buf += '\n';
 		CLoggerServer::Trace(*this);
 	}
 }
 
 CLoggerServer::CLoggerServer()
-	: m_thread(&CLoggerServer::ThreadFunc, this)
+	: m_thread(&CLoggerServer::ThreadFunc, this), m_file(nullptr)
 {
 	m_server = nullptr;
-	m_path = "./log/" + GetTimeStr() + ".log";
+	char curPath[256]{ "" };
+	getcwd(curPath, sizeof(curPath));
+	m_path = curPath;
+	m_path += "/log/" + GetTimeStr() + ".log";
 	printf("%s(%d):<%s> path=%s\n", __FILE__, __LINE__, __FUNCTION__, m_path.data());
 }
 
 int CLoggerServer::ThreadFunc(){
+	printf("%s(%d):<%s> IsValid:%d\n", __FILE__, __LINE__, __FUNCTION__,m_thread.IsValid());
+	printf("%s(%d):<%s> m_epoll:%d\n", __FILE__, __LINE__, __FUNCTION__,(int)m_epoll);
+	printf("%s(%d):<%s> m_server:%p\n", __FILE__, __LINE__, __FUNCTION__,m_server);
+
 	EP_EVENTS events;
 	std::map<int, CSocketBase*> mapClient;
 	while(m_thread.IsValid() && (m_epoll != -1) && (m_server != nullptr)){
@@ -140,8 +156,12 @@ int CLoggerServer::ThreadFunc(){
 						//服务器收到输入请求 <有客户端要来连接>
 						CSocketBase* pClient{ nullptr };
 						int r = m_server->Link(&pClient);
+						printf("%s(%d):<%s> Link_r=%d\n", __FILE__, __LINE__, __FUNCTION__, r);
+
 						if(r < 0) continue;
 						r = m_epoll.Add(*pClient, EpollData((void*)pClient), EPOLLIN | EPOLLERR);
+						printf("%s(%d):<%s> Add()_r=%d\n", __FILE__, __LINE__, __FUNCTION__, r);
+
 						if(r < 0){
 							delete pClient;
 							mapClient[*pClient] = nullptr;
@@ -153,14 +173,19 @@ int CLoggerServer::ThreadFunc(){
 						}
 						mapClient[*pClient] = pClient;
 					} else{ //客户端
+						printf("%s(%d):<%s> ptr=%p\n", __FILE__, __LINE__, __FUNCTION__, events[i].data.ptr);
+
 						const auto pClient = static_cast<CSocketBase*>(events[i].data.ptr);
 						if(pClient != nullptr){
 							Buffer data(1024 * 1024);
 							const int r = pClient->Recv(data);
+							printf("%s(%d):<%s> Recv_r=%d\n", __FILE__, __LINE__, __FUNCTION__, r);
+
 							if(r <= 0){ //失败
 								delete pClient;
 								mapClient[*pClient] = nullptr;
 							} else{
+								printf("%s(%d):<%s> WriteLog=%s\n", __FILE__, __LINE__, __FUNCTION__, static_cast<char*>(data));
 								WriteLog(data);
 							}
 						}

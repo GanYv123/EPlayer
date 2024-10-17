@@ -61,7 +61,7 @@ public:
 		msg.msg_iov = iov;
 		msg.msg_iovlen = 2;
 		//下面是要传入的数据
-		cmsghdr* cmsg = (cmsghdr*)calloc(1, CMSG_LEN(sizeof(int)));
+		const auto cmsg = static_cast<cmsghdr*>(calloc(1, CMSG_LEN(sizeof(int))));
 		if (cmsg == nullptr) return -1;
 		cmsg->cmsg_len = CMSG_LEN(sizeof(int));
 		cmsg->cmsg_level = SOL_SOCKET;
@@ -73,8 +73,8 @@ public:
 		printf("%s(%d):<%s> fd=%d\n", __FILE__, __LINE__, __FUNCTION__, fd);
 		printf("%s(%d):<%s> pipes[1]=%d\n", __FILE__, __LINE__, __FUNCTION__, pipes[1]);
 		printf("%s(%d):<%s> msg size:=%lu msg_addr:%8p\n", __FILE__, __LINE__, __FUNCTION__, sizeof(msg), &msg);
-		ssize_t ret = sendmsg(pipes[1], &msg, 0);
-		printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+		const ssize_t ret = sendmsg(pipes[1], &msg, 0);
+		printf("%s(%d):<%s> ret=%ld\n", __FILE__, __LINE__, __FUNCTION__, ret);
 
 		free(cmsg);
 		if (ret == -1) {
@@ -94,7 +94,7 @@ public:
 		msg.msg_iov = iov;
 		msg.msg_iovlen = 2;
 
-		cmsghdr* cmsg = (cmsghdr*)calloc(1, CMSG_LEN(sizeof(int)));
+		const auto cmsg = static_cast<cmsghdr*>(calloc(1, CMSG_LEN(sizeof(int))));
 		if (cmsg == nullptr) return -1;
 		cmsg->cmsg_len = CMSG_LEN(sizeof(int));
 		cmsg->cmsg_level = SOL_SOCKET;
@@ -102,13 +102,13 @@ public:
 		msg.msg_control = cmsg;
 		msg.msg_controllen = cmsg->cmsg_len;
 
-
 		ssize_t ret = recvmsg(pipes[0], &msg, 0);
 		if (ret == -1) {
 			free(cmsg);
+			printf("%s(%d):<%s> recvmsg:ret=%ld\n", __FILE__, __LINE__, __FUNCTION__, ret);
 			return -2;
 		}
-		fd = *(int*)CMSG_DATA(cmsg);
+		fd = *reinterpret_cast<int*>(CMSG_DATA(cmsg));
 		free(cmsg);
 
 		return 0;

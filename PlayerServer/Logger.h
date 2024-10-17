@@ -3,7 +3,6 @@
 #include "Thread.h"
 #include "Epoll.h"
 #include "Socket.h"
-#include <map>
 #include <sys/timeb.h>
 #include <stdarg.h>
 #include <sstream>
@@ -50,7 +49,7 @@ public:
 	LogInfo& operator<<(const T& data){
 		std::stringstream stream;
 		stream << data;
-		m_buf += stream.str();
+		m_buf += stream.str().c_str();
 		return *this;
 	}
 
@@ -95,18 +94,24 @@ public:
 		//本地套接字
 		ret = m_server->Init(CSockParam("./log/server.sock", static_cast<int>(SOCK_IS_SERVER)));
 		if(ret != 0){
+			printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
 			Close();
 			return -5;
 		}
-		ret = m_thread.Start();
+		ret = m_epoll.Add(*m_server, EpollData((void*)m_server),EPOLLIN|EPOLLERR);
 		if(ret != 0){
 			Close();
 			return -6;
 		}
+		ret = m_thread.Start();
+		if(ret != 0){
+			printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+			Close();
+			return -7;
+		}
 		return 0;
 	}
 
-	int ThreadFunc();
 
 	int Close(){
 		if(m_server != nullptr){
@@ -123,9 +128,9 @@ public:
 	 * 给其他非日志进程和线程使用
 	 */
 	static void Trace(const LogInfo& info){
+		int ret{ 0 };
 		static thread_local CLocalSocket client;
 		if(client == -1){
-			int ret{ 0 };
 			ret = client.Init(CSockParam("./log/server.sock", 0));
 			if(ret != 0){
 #ifdef  _DEBUG
@@ -133,8 +138,14 @@ public:
 #endif
 				return;
 			}
+			printf("%s(%d):<%s> ret=%d client:%d\n", __FILE__, __LINE__, __FUNCTION__, ret, (int)client);
+			ret = client.Link();
+			printf("%s(%d):<%s> ret=%d client:%d\n", __FILE__, __LINE__, __FUNCTION__, ret, (int)client);
+
 		}
-		client.Send(info);
+		ret = client.Send(info);
+		printf("%s(%d):<%s> ret=%d client:%d\n", __FILE__, __LINE__, __FUNCTION__, ret, (int)client);
+
 	}
 
 	static Buffer GetTimeStr(){
@@ -144,7 +155,7 @@ public:
 		tm* pTm = localtime(&tmb.time);
 		// 格式化时间戳和日志消息
 		int nSize = snprintf(result, sizeof(result),
-			"%04d-%02d-%02d %02d:%02d:%02d %03d",
+			"%04d-%02d-%02d_%02d-%02d-%02d.%03d",
 			pTm->tm_year + 1900, pTm->tm_mon + 1, pTm->tm_mday,
 			pTm->tm_hour, pTm->tm_min, pTm->tm_sec, tmb.millitm
 		);
@@ -153,6 +164,8 @@ public:
 	}
 
 protected:
+	int ThreadFunc();
+
 	/**
 	 * 写日志
 	 * @param data
@@ -178,11 +191,11 @@ private:
 
 #ifndef TRACE
 
-#define TRACEI(...) CLoggerServer::Trace(LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_INFO,__VA_AGRS__))
-#define TRACED(...) CLoggerServer::Trace(LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_DEBUG,__VA_AGRS__))
-#define TRACEW(...) CLoggerServer::Trace(LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_WARING,__VA_AGRS__))
-#define TRACEE(...) CLoggerServer::Trace(LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_ERROR,__VA_AGRS__))
-#define TRACEF(...) CLoggerServer::Trace(LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_FATAL,__VA_AGRS__))
+#define TRACEI(...) CLoggerServer::Trace(LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_INFO,__VA_ARGS__))
+#define TRACED(...) CLoggerServer::Trace(LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_DEBUG,__VA_ARGS__))
+#define TRACEW(...) CLoggerServer::Trace(LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_WARING,__VA_ARGS__))
+#define TRACEE(...) CLoggerServer::Trace(LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_ERROR,__VA_ARGS__))
+#define TRACEF(...) CLoggerServer::Trace(LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_FATAL,__VA_ARGS__))
 
 //LOGI<<"hello"<<"world";
 #define LOGI LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_INFO)
@@ -193,10 +206,10 @@ private:
 
 //内存导出
 //00 01 02 65 .... ;...a .
-#define DUMPI(data, size) LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(),  LOG_INFO, data, size)
-#define DUMPD(data, size) LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_DEBUG, data, size)
-#define DUMPW(data, size) LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_WARING, data, size)
-#define DUMPE(data, size) LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_ERROR, data, size)
-#define DUMPF(data, size) LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_FATAL, data, size)
+#define DUMPI(data, size) CLoggerServer::Trace(LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(),  LOG_INFO, data, size))
+#define DUMPD(data, size) CLoggerServer::Trace(LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_DEBUG, data, size))
+#define DUMPW(data, size) CLoggerServer::Trace(LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_WARING, data, size))
+#define DUMPE(data, size) CLoggerServer::Trace(LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_ERROR, data, size))
+#define DUMPF(data, size) CLoggerServer::Trace(LogInfo(__FILE__, __LINE__, __FUNCTION__, getpid(), pthread_self(), LOG_FATAL, data, size))
 
 #endif
