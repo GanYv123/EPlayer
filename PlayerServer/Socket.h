@@ -128,7 +128,7 @@ public:
 	virtual int Close() {
 		m_status = 3; //设置为关闭状态
 		if(m_socket != -1){
-			unlink(m_param.ip);
+			if(m_param.attr & SOCK_IS_SERVER) unlink(m_param.ip);
 			const int fd = m_socket;
 			m_socket = -1;
 			close(fd);

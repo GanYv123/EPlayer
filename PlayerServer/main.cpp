@@ -14,7 +14,7 @@ int CreateLogServer(CProcess* proc) {
 	int fd{ 0 };
 	while(true){
 		ret = proc->RecvFD(fd);
-		//printf("%s(%d):<%s> recvmsg:ret=%d\n", __FILE__, __LINE__, __FUNCTION__, fd);
+		printf("%s(%d):<%s> recvmsg:ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
 		if(fd <= 0) break;
 	}
 	ret = server.Close();
