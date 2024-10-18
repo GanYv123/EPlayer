@@ -87,6 +87,7 @@
     <ClInclude Include="Process.h" />
     <ClInclude Include="Socket.h" />
     <ClInclude Include="Thread.h" />
+    <ClInclude Include="ThreadPool.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>

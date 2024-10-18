@@ -251,13 +251,13 @@ public:
 			return static_cast<int>(len);
 		}
 		if(len < 0){
-			if(errno == EINTR || (errno == EAGAIN)){
+			if(errno == EINTR || (errno == EAGAIN)){//非阻塞的情况
 				data.clear();
 				return 0;
 			}
-			return -2;
+			return -2;//发送错误
 		}
-		return -3;
+		return -3;//套接字被关闭
 	}
 
 	//关闭连接

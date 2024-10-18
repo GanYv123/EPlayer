@@ -40,12 +40,11 @@ public:
     CEpoll& operator=(const CEpoll&) = delete;
     operator int() const { return m_epoll; }
 
-    int Create(unsigned count) {
+    int Create(const unsigned count) {
         if (m_epoll != -1) return -1;
         m_epoll = epoll_create(static_cast<int>(count));
         return m_epoll == -1 ? -2 : 0;
     }
-   
 
     /**
      * 小于0表示错误 等于0表示没有事情发送，大于0表示成功拿到事件
@@ -65,19 +64,19 @@ public:
         return ret;  // 返回事件的数量
     }
 
-    int Add(int fd, const EpollData& data = EpollData(nullptr), uint32_t events = EPOLLIN) const {
+    int Add(const int fd, const EpollData& data = EpollData(nullptr), const uint32_t events = EPOLLIN) const {
         if (m_epoll == -1) return -1;
         epoll_event ev = { events, data };
         return epoll_ctl(m_epoll, EPOLL_CTL_ADD, fd, &ev) == -1 ? -2 : 0;
     }
 
-    int Modify(int fd, uint32_t events, const EpollData& data = EpollData(nullptr)) const {
+    int Modify(const int fd, const uint32_t events, const EpollData& data = EpollData(nullptr)) const {
         if (m_epoll == -1) return -1;
         epoll_event ev = { events, data };
         return epoll_ctl(m_epoll, EPOLL_CTL_MOD, fd, &ev) == -1 ? -2 : 0;
     }
 
-    int Del(int fd) const {
+    int Del(const int fd) const {
         if (m_epoll == -1) return -1;
         return epoll_ctl(m_epoll, EPOLL_CTL_DEL, fd, nullptr) == -1 ? -2 : 0;
     }

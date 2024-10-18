@@ -1,6 +1,7 @@
 ﻿#include "Function.h"
 #include "Process.h"
 #include "Logger.h"
+#include "ThreadPool.h"
 
 int CreateLogServer(CProcess* proc) {
 	CLoggerServer server;
@@ -22,10 +23,10 @@ int CreateLogServer(CProcess* proc) {
 	return 0;
 }
 
-int CreateClientSerevr(CProcess* proc) {
+int CreateClientServer(CProcess* proc) {
 	printf("%s(%d):<%s> pid=%d\n", __FILE__, __LINE__, __FUNCTION__, getpid());
 	int fd = -1;
-	int ret = proc->RecvFD(fd);
+	proc->RecvFD(fd);
 	//printf("%s(%d):<%s> RecvFD ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
 	//printf("%s(%d):<%s> fd=%d\n", __FILE__, __LINE__, __FUNCTION__, fd);
 	sleep(1);
@@ -62,7 +63,7 @@ int main() {
 	CThread thread(LogTest);
 	thread.Start();
 
-	procClients.SetEntryFunction(CreateClientSerevr, &procClients);
+	procClients.SetEntryFunction(CreateClientServer, &procClients);
 	ret = procClients.CreateSubProcess();
 	if(ret != 0){
 		printf("%s(%d):<%s> pid=%d\n", __FILE__, __LINE__, __FUNCTION__, getpid());
@@ -80,6 +81,21 @@ int main() {
 	if(ret != 0)printf("errno:%d msg:%s\n", errno, strerror(errno));
 	write(fd, "zxy0d000721", strlen("zxy0d000721"));
 	close(fd);
+	//test ThreadPoll>>
+	CThreadPool pool;
+	ret = pool.Start(4);
+	if(ret != 0)printf("errno:%d msg:%s\n", errno, strerror(errno));
+	ret = pool.AddTask(LogTest);
+	if(ret != 0)printf("errno:%d msg:%s\n", errno, strerror(errno));
+	ret = pool.AddTask(LogTest);
+	if(ret != 0)printf("errno:%d msg:%s\n", errno, strerror(errno));
+	ret = pool.AddTask(LogTest);
+	if(ret != 0)printf("errno:%d msg:%s\n", errno, strerror(errno));
+	ret = pool.AddTask(LogTest);
+	if(ret != 0)printf("errno:%d msg:%s\n", errno, strerror(errno));
+	(void)getchar();
+	pool.Close();
+	//<<end test ThreadPoll
 	procLog.SendFD(-1);
 	(void)getchar();
 	return 0;
