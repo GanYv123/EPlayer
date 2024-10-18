@@ -164,7 +164,7 @@ public:
 	}
 
 protected:
-	int ThreadFunc();
+	int ThreadFunc() const;
 
 	/**
 	 * –¥»’÷æ

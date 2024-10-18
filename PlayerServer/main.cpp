@@ -58,6 +58,10 @@ int main() {
 	}
 	LogTest();
 	printf("%s(%d):<%s> pid=%d\n", __FILE__, __LINE__, __FUNCTION__, getpid());
+	//线程中测试日志
+	CThread thread(LogTest);
+	thread.Start();
+
 	procClients.SetEntryFunction(CreateClientSerevr, &procClients);
 	ret = procClients.CreateSubProcess();
 	if(ret != 0){

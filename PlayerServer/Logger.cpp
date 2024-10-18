@@ -4,7 +4,7 @@ LogInfo::LogInfo(
 	const char* file, int line,
 	const char* func,
 	pid_t pid, pthread_t tid,
-	int level, const char* fmt, ...)
+	const int level, const char* fmt, ...)
 {
 	constexpr char sLevel[][8] = {
 		"INFO","DEBUG","WARNING","ERROR","FATAL"
@@ -37,7 +37,7 @@ LogInfo::LogInfo(
 LogInfo::LogInfo(const char* file, int line,
 	const char* func,
 	pid_t pid, pthread_t tid,
-	int level)
+	const int level)
 {//自己主动发 Stream 式日志
 	bAuto = true;
 
@@ -45,7 +45,7 @@ LogInfo::LogInfo(const char* file, int line,
 		"INFO","DEBUG","WARNING","ERROR","FATAL"
 	};
 	char* buf = nullptr;
-	int count = asprintf(
+	const int count = asprintf(
 		&buf, "%s(%d):[%s][%s]<%d-%d>(%s) ",
 		file, line, sLevel[level],
 		static_cast<char*>(CLoggerServer::GetTimeStr()), pid, tid, func
@@ -59,7 +59,7 @@ LogInfo::LogInfo(const char* file, int line,
 LogInfo::LogInfo(const char* file, int line,
 	const char* func,
 	pid_t pid, pthread_t tid,
-	int level, void* pData, size_t nSize)
+	const int level, void* pData, const size_t nSize)
 {
 	constexpr char sLevel[][8] = {
 		"INFO", "DEBUG", "WARNING", "ERROR", "FATAL"
@@ -112,7 +112,7 @@ LogInfo::LogInfo(const char* file, int line,
 	}
 
 	// 如果有剩余未满16字节的数据，也要处理
-	size_t remainder = nSize % 16;
+	const size_t remainder = nSize % 16;
 	if(remainder > 0){
 		// 填充剩余部分
 		for(size_t i = remainder; i < 16; i++){
@@ -120,7 +120,7 @@ LogInfo::LogInfo(const char* file, int line,
 		}
 		hexBuffer += "\t;";
 		for(size_t i = 0; i < remainder; i++){
-			unsigned char ch = Data[nSize - remainder + i];
+			const unsigned char ch = Data[nSize - remainder + i];
 			hexBuffer += (ch >= 32 && ch <= 126) ? ch : '.';
 		}
 		hexBuffer += '\n';
@@ -149,7 +149,7 @@ CLoggerServer::CLoggerServer()
 	printf("%s(%d):<%s> path=%s\n", __FILE__, __LINE__, __FUNCTION__, m_path.data());
 }
 
-int CLoggerServer::ThreadFunc(){
+int CLoggerServer::ThreadFunc() const {
 	printf("%s(%d):<%s> IsValid:%d\n", __FILE__, __LINE__, __FUNCTION__,m_thread.IsValid());
 	printf("%s(%d):<%s> m_epoll:%d\n", __FILE__, __LINE__, __FUNCTION__,(int)m_epoll);
 	printf("%s(%d):<%s> m_server:%p\n", __FILE__, __LINE__, __FUNCTION__,m_server);
@@ -182,10 +182,13 @@ int CLoggerServer::ThreadFunc(){
 							continue;
 						}
 						const auto it = mapClient.find(*pClient);
-						if(it != mapClient.end() && it->second != nullptr){
-							delete it->second;
+						if(it != mapClient.end()){
+							if(it->second)
+								delete it->second;
 						}
 						mapClient[*pClient] = pClient;
+						printf("%s(%d):<%s>\n", __FILE__, __LINE__, __FUNCTION__);
+
 					} else{ //客户端
 						printf("%s(%d):<%s> ptr=%p\n", __FILE__, __LINE__, __FUNCTION__, events[i].data.ptr);
 
