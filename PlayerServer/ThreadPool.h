@@ -32,7 +32,7 @@ public:
 		int ret{ 0 };
 		if(m_server != nullptr) return -1;//已经初始化
 		if(m_path.empty()) return -2;//构造失败
-		m_server = new CLocalSocket();
+		m_server = new CSocket();
 		if(m_server == nullptr) return -3;
 		ret = m_server->Init(CSockParam(m_path,SOCK_IS_SERVER));
 		if(ret != 0) return -4;
@@ -66,7 +66,7 @@ public:
 	int AddTask(_FUNCTION_ func, _ARGS_... args) {
 		//每个线程在访问这个变量时，都会有自己的独立副本。
 		//这意味着一个线程对这个变量的修改不会影响到其他线程中的同名变量。
-		static  thread_local CLocalSocket client;
+		static  thread_local CSocket client;
 		int ret{ 0 };
 		if(client == -1){
 			ret = client.Init(CSockParam(m_path, 0));
@@ -84,6 +84,10 @@ public:
 			return -4;
 		}
 		return 0;
+	}
+
+	size_t Size()const {
+		return m_threads.size();
 	}
 
 protected:

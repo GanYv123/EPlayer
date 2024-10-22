@@ -1,7 +1,4 @@
-﻿#include "Function.h"
-#include "Process.h"
-#include "Logger.h"
-#include "ThreadPool.h"
+﻿#include "EPlayerServer.h"
 
 int CreateLogServer(CProcess* proc) {
 	CLoggerServer server;
@@ -47,7 +44,7 @@ int LogTest() {
 	return 0;
 }
 
-int main() {
+int oldtest() {
 	//CProcess::SwitchDaemon();
 	CProcess procLog, procClients;
 	printf("%s(%d):<%s> pid=%d\n", __FILE__, __LINE__, __FUNCTION__, getpid());
@@ -100,3 +97,24 @@ int main() {
 	(void)getchar();
 	return 0;
 }
+
+
+int main() {
+	CProcess procLog;
+	int ret{ 0 };
+	printf("%s(%d):<%s> pid=%d\n", __FILE__, __LINE__, __FUNCTION__, getpid());
+	ret = procLog.SetEntryFunction(CreateLogServer, &procLog);
+	ERR_RETURN(ret, -1)
+
+	ret = procLog.CreateSubProcess();
+	ERR_RETURN(ret, -2)
+	CEPlayerServer business(2);
+	CServer server;
+	ret = server.Init(&business);
+	ERR_RETURN(ret, -3)
+	ret = server.Run();
+	ERR_RETURN(ret, -4)
+
+	return 0;
+}
+

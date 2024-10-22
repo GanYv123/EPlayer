@@ -86,7 +86,7 @@ public:
 
 		int ret = m_epoll.Create(1);
 		if(ret != 0) return -3;
-		m_server = new CLocalSocket();
+		m_server = new CSocket();
 		if(m_server == nullptr){
 			Close();
 			return -4;
@@ -129,7 +129,7 @@ public:
 	 */
 	static void Trace(const LogInfo& info){
 		int ret{ 0 };
-		static thread_local CLocalSocket client;
+		static thread_local CSocket client;
 		if(client == -1){
 			ret = client.Init(CSockParam("./log/server.sock", 0));
 			if(ret != 0){

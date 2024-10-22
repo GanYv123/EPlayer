@@ -25,12 +25,13 @@ public:
 
 #include <cstdint> // 包含 uint8_t 的定义
 
-enum SockAttr
+enum SockAttr  // NOLINT(performance-enum-size)
 {// NOLINT(performance-enum-size)
 // 使用 int 作为底层类型  
 	SOCK_IS_SERVER = 1,	// 是否服务器 1{服务器} 0{客户端}
 	SOCK_IS_NON_BLOCK = 2,	// 是否阻塞 1{非阻塞} 0{阻塞}
-	SOCK_IS_UDP = 4,	// 1{UDP} 0{TCP} 
+	SOCK_IS_UDP = 4,	// 1{UDP} 0{TCP}
+	SOCK_IS_IP = 8,		//是否为IP协议 1{IP协议} 0{本地套接字}
 };
 
 
@@ -128,7 +129,8 @@ public:
 	virtual int Close() {
 		m_status = 3; //设置为关闭状态
 		if(m_socket != -1){
-			if(m_param.attr & SOCK_IS_SERVER) unlink(m_param.ip);
+			if((m_param.attr&SOCK_IS_SERVER) && ((m_param.attr&SOCK_IS_IP) == 0))//非IP服务器
+				unlink(m_param.ip);
 			const int fd = m_socket;
 			m_socket = -1;
 			close(fd);
@@ -150,18 +152,18 @@ private:
 };
 
 /**
- * 本地套接字封装类
+ * 套接字封装类
  */
-class CLocalSocket : public CSocketBase
+class CSocket : public CSocketBase
 {
 public:
-	CLocalSocket() : CSocketBase() {}
+	CSocket() : CSocketBase() {}
 
-	explicit CLocalSocket(const int sock) : CSocketBase() {
+	explicit CSocket(const int sock) : CSocketBase() {
 		m_socket = sock;
 	}
-	~CLocalSocket() override {
-		CLocalSocket::Close();
+	~CSocket() override {
+		CSocket::Close();
 	}
 
 public:
@@ -174,14 +176,20 @@ public:
 		m_param = param;
 		const int type = (param.attr & SOCK_IS_UDP) ? SOCK_DGRAM : SOCK_STREAM;
 		if(m_socket == -1){
-			m_socket = socket(PF_LOCAL, type, 0);
+			if(param.attr & SOCK_IS_IP)
+				m_socket = socket(PF_INET, type, 0);
+			else
+				m_socket = socket(PF_LOCAL, type, 0);
 		} else{
 			m_status = 2; //accept来的套接字,已经处于连接状态
 		}
 		if(m_socket == -1) return -2;
 		int ret{ 0 };
 		if(m_param.attr & SOCK_IS_SERVER){
-			ret = bind(m_socket, m_param.addrun(), sizeof(sockaddr_un));
+			if(m_param.attr & SOCK_IS_IP)
+				ret = bind(m_socket, m_param.addrin(), sizeof(sockaddr_in));
+			else
+				ret = bind(m_socket, m_param.addrun(), sizeof(sockaddr_un));
 			if(ret == -1) return -3;
 			ret = listen(m_socket, 32);
 			if(ret == -1) return -4;
@@ -203,10 +211,19 @@ public:
 		if(m_param.attr & SOCK_IS_SERVER){
 			if(pClient == nullptr) return -2;
 			CSockParam param;
-			socklen_t len = sizeof(sockaddr_un);
-			const int fd = accept(m_socket, param.addrun(), &len);
+			int fd = -1;
+			socklen_t len = 0;
+			if(m_param.attr & SOCK_IS_IP){
+				param.attr |= SOCK_IS_IP;
+				len = sizeof(sockaddr_in);
+				fd = accept(m_socket, param.addrin(), &len);
+			}
+			else{
+				len = sizeof(sockaddr_un);
+				fd = accept(m_socket, param.addrun(), &len);
+			}
 			if(fd == -1)return -3;
-			*pClient = new CLocalSocket(fd);
+			*pClient = new CSocket(fd);
 			if(*pClient == nullptr) return -4;
 			ret = (*pClient)->Init(param);
 			if(ret != 0){
@@ -216,7 +233,11 @@ public:
 			}
 		} else{
 			//客户端
-			ret = connect(m_socket, m_param.addrun(), sizeof(sockaddr_un));
+			if(m_param.attr & SOCK_IS_IP)
+				ret = connect(m_socket, m_param.addrin(), sizeof(sockaddr_in));
+			else
+				ret = connect(m_socket, m_param.addrun(), sizeof(sockaddr_un));
+
 			if(ret != 0) return -6;
 		}
 		m_status = 2;//连接完成
