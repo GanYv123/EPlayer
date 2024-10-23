@@ -47,7 +47,8 @@ public:
 
 	//构造网络套接字
 	CSockParam(const Buffer& ip, const short port, const int attr)
-		: addr_un() {
+		: addr_un()
+	{
 		this->ip = ip;
 		this->port = port;
 		this->attr = attr;
@@ -55,6 +56,14 @@ public:
 		addr_in.sin_port = port;
 		addr_in.sin_addr.s_addr = inet_addr(ip);
 	}
+
+	CSockParam(const sockaddr_in* addrin, const int attr)
+		: addr_un(), port(0)
+	{
+		this->attr = attr;
+		memcpy(&addr_in, addrin, sizeof(addr_in));
+	}
+
 	//构造本地套接字
 	CSockParam(const Buffer& path, const int attr)
 		: addr_in(), port(-1) {
@@ -129,7 +138,7 @@ public:
 	virtual int Close() {
 		m_status = 3; //设置为关闭状态
 		if(m_socket != -1){
-			if((m_param.attr&SOCK_IS_SERVER) && ((m_param.attr&SOCK_IS_IP) == 0))//非IP服务器
+			if((m_param.attr & SOCK_IS_SERVER) && ((m_param.attr & SOCK_IS_IP) == 0))//非IP服务器
 				unlink(m_param.ip);
 			const int fd = m_socket;
 			m_socket = -1;
@@ -139,6 +148,8 @@ public:
 	}
 	virtual operator int() { return m_socket; }
 	virtual operator int() const { return m_socket; }
+	virtual operator const sockaddr_in* ()const{ return &m_param.addr_in; }
+	virtual operator sockaddr_in* (){ return &m_param.addr_in; }
 protected:
 	//套接字描述符 默认-1
 	int m_socket;
@@ -159,7 +170,7 @@ class CSocket : public CSocketBase
 public:
 	CSocket() : CSocketBase() {}
 
-	explicit CSocket(const int sock) : CSocketBase() {
+	CSocket(const int sock) : CSocketBase() {
 		m_socket = sock;
 	}
 	~CSocket() override {
@@ -217,8 +228,7 @@ public:
 				param.attr |= SOCK_IS_IP;
 				len = sizeof(sockaddr_in);
 				fd = accept(m_socket, param.addrin(), &len);
-			}
-			else{
+			} else{
 				len = sizeof(sockaddr_un);
 				fd = accept(m_socket, param.addrun(), &len);
 			}

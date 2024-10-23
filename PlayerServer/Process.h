@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <netinet/in.h>
 
 class CProcess {
 public:
@@ -113,6 +114,69 @@ public:
 
 		return 0;
 	}
+
+
+	int SendSocket(const int fd,const sockaddr_in* addrin) {//主进程完成
+		struct msghdr msg;
+		iovec iov[2];
+		char buf[2][30] = { "edoyun" ,"zhaoxuyang" };
+		iov[0].iov_base = (void*)addrin;
+		iov[0].iov_len = sizeof(sockaddr_in);
+		iov[1].iov_base = buf[1];
+		iov[1].iov_len = sizeof(buf[1]);
+		msg.msg_iov = iov;
+		msg.msg_iovlen = 2;
+		//下面是要传入的数据
+		const auto cmsg = static_cast<cmsghdr*>(calloc(1, CMSG_LEN(sizeof(int))));
+		if(cmsg == nullptr) return -1;
+		cmsg->cmsg_len = CMSG_LEN(sizeof(int));
+		cmsg->cmsg_level = SOL_SOCKET;
+		cmsg->cmsg_type = SCM_RIGHTS;
+		*(int*)CMSG_DATA(cmsg) = fd;
+		msg.msg_control = cmsg;
+		msg.msg_controllen = cmsg->cmsg_len;
+
+		const ssize_t ret = sendmsg(pipes[1], &msg, 0);
+		printf("%s(%d):<%s> ret=%ld\n", __FILE__, __LINE__, __FUNCTION__, ret);
+
+		free(cmsg);
+		if(ret == -1){
+			return -2;
+		}
+		return 0;
+	}
+
+	int RecvSocket(int& fd,sockaddr_in* addrin) {
+		msghdr msg;
+		iovec iov[2];
+		char buf[2][30]{ "","" };
+		iov[0].iov_base = addrin;
+		iov[0].iov_len = sizeof(sockaddr_in);
+		iov[1].iov_base = buf[1];
+		iov[1].iov_len = sizeof(buf[1]);
+		msg.msg_iov = iov;
+		msg.msg_iovlen = 2;
+
+		const auto cmsg = static_cast<cmsghdr*>(calloc(1, CMSG_LEN(sizeof(int))));
+		if(cmsg == nullptr) return -1;
+		cmsg->cmsg_len = CMSG_LEN(sizeof(int));
+		cmsg->cmsg_level = SOL_SOCKET;
+		cmsg->cmsg_type = SCM_RIGHTS;
+		msg.msg_control = cmsg;
+		msg.msg_controllen = cmsg->cmsg_len;
+
+		ssize_t ret = recvmsg(pipes[0], &msg, 0);
+		if(ret == -1){
+			free(cmsg);
+			printf("%s(%d):<%s> recvmsg:ret=%ld\n", __FILE__, __LINE__, __FUNCTION__, ret);
+			return -2;
+		}
+		fd = *reinterpret_cast<int*>(CMSG_DATA(cmsg));
+		free(cmsg);
+
+		return 0;
+	}
+
 
 	static int SwitchDaemon() {
 		// 1. Fork 子进程

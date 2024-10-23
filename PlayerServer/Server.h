@@ -3,6 +3,47 @@
 #include "Thread.h"
 #include "ThreadPool.h"
 
+class CSocketBase;
+class Buffer;
+
+//ÌØÀý»¯Ä£°å
+template<typename _FUNCTION_, typename... _ARGS_>
+class CConnectedFunction : public CFunctionBase
+{
+public:
+	CConnectedFunction(_FUNCTION_ func, _ARGS_... args)
+		:m_binder(std::forward<_FUNCTION_>(func), std::forward<_ARGS_>(args)...) {
+	}
+
+	~CConnectedFunction() override = default;
+
+	int operator()(CSocketBase* pClient) override {
+		return m_binder(pClient);
+	}
+
+	typename std::_Bindres_helper<int, _FUNCTION_, _ARGS_...>::type m_binder;
+
+protected:
+private:
+};
+
+template<typename _FUNCTION_, typename... _ARGS_>
+class CRecvivedFunction : public CFunctionBase
+{
+public:
+	CRecvivedFunction(_FUNCTION_ func, _ARGS_... args)
+		:m_binder(std::forward<_FUNCTION_>(func), std::forward<_ARGS_>(args)...) {
+	}
+	~CRecvivedFunction() override = default;
+	int operator()(CSocketBase* pClient, const Buffer& data) override {
+		return m_binder(pClient, data);
+	}
+	typename std::_Bindres_helper<int, _FUNCTION_, _ARGS_...>::type m_binder;
+
+protected:
+private:
+};
+
 class CBusiness
 {
 public:
@@ -13,7 +54,7 @@ public:
 	virtual int BusinessProcess(CProcess* proc) = 0;
 	template<typename _FUNCTION_, typename... _ARGS_>
 	int SetConnectCallback(_FUNCTION_ func, _ARGS_... args) {
-		m_connectedcallback = new CFunction<_FUNCTION_, _ARGS_...>(func, args...);
+		m_connectedcallback = new CConnectedFunction<_FUNCTION_, _ARGS_...>(func, args...);
 		if(m_connectedcallback == nullptr) return -1;
 		return 0;
 	}
@@ -21,7 +62,7 @@ public:
 
 	template<typename _FUNCTION_, typename... _ARGS_>
 	int SetRecvCallback(_FUNCTION_ func, _ARGS_... args) {
-		m_recvedcallback = new CFunction<_FUNCTION_, _ARGS_...>(func, args...);
+		m_recvedcallback = new CRecvivedFunction<_FUNCTION_, _ARGS_...>(func, args...);
 		if(m_recvedcallback == nullptr) return -1;
 		return 0;
 	}
