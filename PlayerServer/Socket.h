@@ -7,34 +7,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string>
-
-class Buffer : public std::string
-{
-public:
-	Buffer() : std::string() {}
-	Buffer(const char* str,size_t length):std::string() {
-		resize(length);
-		memcpy(const_cast<char*>(c_str()), str, length);
-	}
-	Buffer(const char* begin, const char* end) :std::string() {
-		const std::ptrdiff_t len = end - begin;
-		if(len > 0){
-			resize(len);
-			memcpy(const_cast<char*>(c_str()), begin, len);
-		}
-	}
-	Buffer(size_t size) :std::string() { resize(size); }
-	Buffer(const std::string& str) : std::string(str){}
-	Buffer(const char* str) : std::string(str){}
-
-public:
-	// 返回一个非 const 的 char* 指针
-	operator char* () { return const_cast<char*>(c_str()); }
-	operator char* () const { return const_cast<char*>(c_str()); }
-	operator const char* () const { return c_str(); }
-};
-
 #include <cstdint> // 包含 uint8_t 的定义
+#include "Public.h"
 
 enum SockAttr  // NOLINT(performance-enum-size)
 {// NOLINT(performance-enum-size)

@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "http_parser.h"
-#include "Socket.h"
+#include "Public.h"
 #include <map>
 
 class CHttpParser

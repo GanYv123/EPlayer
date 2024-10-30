@@ -76,6 +76,7 @@
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
     <ClCompile Include="CHttpParser.cpp" />
+    <ClCompile Include="DatabaseHelper.cpp" />
     <ClCompile Include="Epoll.cpp" />
     <ClCompile Include="http_parser.c">
       <CAdditionalWarning Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">switch;no-deprecated-declarations;empty-body;return-type;parentheses;no-pointer-sign;no-format;uninitialized;unreachable-code;unused-function;unused-value;unused-variable;%(CAdditionalWarning)</CAdditionalWarning>
@@ -89,12 +90,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CHttpParser.h" />
+    <ClInclude Include="DatabaseHelper.h" />
     <ClInclude Include="EPlayerServer.h" />
     <ClInclude Include="Epoll.h" />
     <ClInclude Include="Function.h" />
     <ClInclude Include="http_parser.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Process.h" />
+    <ClInclude Include="Public.h" />
     <ClInclude Include="Server.h" />
     <ClInclude Include="Socket.h" />
     <ClInclude Include="Thread.h" />
