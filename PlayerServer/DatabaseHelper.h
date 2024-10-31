@@ -6,9 +6,10 @@
 #include <vector>
 
 class _Table_;
+using PTable = std::shared_ptr<_Table_>;
 
 using KeyValue = std::map<Buffer, Buffer>;
-using Result = std::list<_Table_>;
+using Result = std::list<PTable>;
 
 class CDatabaseClient
 {
@@ -43,9 +44,6 @@ using PFiled = std::shared_ptr<_Field_>;
 using FieldArray = std::vector<PFiled>;
 using FieldMap = std::map<Buffer, PFiled>;
 
-class _Table;
-
-using PTable = std::shared_ptr<_Table_>;
 
 class _Table_
 {
@@ -62,7 +60,7 @@ public:
 	virtual Buffer Modify() = 0;// TODO:参数进行优化
 	virtual Buffer Query() = 0;
 	//创建一个基于表的对象
-	virtual PTable Copy() = 0;
+	virtual PTable Copy() const = 0;
 public:
 	//获取表的全名
 	virtual operator const Buffer() const = 0;
