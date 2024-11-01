@@ -251,7 +251,8 @@ int sql_test() {
 }
 
 int mysql_test() {
-	
+
+	return 0;
 }
 
 int main() {

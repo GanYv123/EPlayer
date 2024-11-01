@@ -72,7 +72,7 @@ public:
 			timespec ts;
 			ts.tv_sec = 0;
 			ts.tv_nsec = 100 * 100000;//100ms
-			const int ret = pthread_timedjoin_np(thread, nullptr, &ts);
+			const int ret = pthread_timedjoin_np(thread, nullptr, &ts);//等待线程 thread 的结束
 			if(ret == ETIMEDOUT){
 				pthread_detach(thread);
 				pthread_kill(thread, SIGUSR2);
@@ -140,6 +140,8 @@ private:
 };
 
 /*
+ *AI 对该代码的分析：
+ *
  *std::map的线程安全问题：m_mapThread 是静态的，而静态成员变量在多个线程中是共享的。你在多个线程中对 m_mapThread 进行插入、查找和删除操作，这会导致数据竞争问题。需要使用互斥锁（如 pthread_mutex_t 或 C++11 的 std::mutex）来保护对 m_mapThread 的访问。
 
 pthread_t 比较问题：pthread_t 类型在不同的平台上可能是不同的类型（如整型或指针类型）。直接将 pthread_t 作为键放在 std::map 中可能导致兼容性问题，最好明确类型转换或者在特定平台上测试其可行性。

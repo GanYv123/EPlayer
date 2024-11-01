@@ -1,15 +1,29 @@
 ﻿#pragma once
 #include <unistd.h>
-
 #include "Epoll.h"
 #include "Socket.h"
 #include "Thread.h"
 
+
+/**
+ * 任务调度的完整流程:
+ * 进程A 创建线程池对象是创建了一个server套接字（根据时间戳生成的唯一套接字）
+ * 1.AddTask添加任务:通过创建的线程池的对象调用AddTask传入函数指针和参数
+ * 为每个线程分派 TaskDispatch 作为线程执行函数，将本对象当作参数传入,之后启动线程
+ * 这样开启的每个线程都有自己的一个独立的 local_socket
+ *
+ * 2.任务接收:线程池中维护一个 epoll TaskDispatch 利用c++11的新特性，将函数和参数绑定成一个对象
+ * 序列化发送给线程，线程再调用这个函数
+ *
+ * 3.任务执行:获取到对象后直接调用即可
+ */
 class CThreadPool
 {
 public:
+	//初始化线程池 
 	CThreadPool() {
 		m_server = nullptr;
+		//根据时间戳创建本地套接字 供进程间通信
 		timespec tp{ 0,0 };
 		clock_gettime(CLOCK_REALTIME, &tp);
 		char* buf{ nullptr };
@@ -18,7 +32,6 @@ public:
 			m_path = buf;
 			free(buf);
 		}
-		//todo:问题处理在start接口里面判断m_path来解决问题
 		usleep(1);
 	}
 	~CThreadPool() {
@@ -30,18 +43,21 @@ public:
 public:
 	int Start(const unsigned count) {
 		int ret{ 0 };
-		if(m_server != nullptr) return -1;//已经初始化
+		if(m_server != nullptr) return -1;//已启动 防止重复启动
 		if(m_path.empty()) return -2;//构造失败
-		m_server = new CSocket();
+		m_server = new CSocket(); //创建套接字
 		if(m_server == nullptr) return -3;
+		//根据获取到的时间戳来创建套接字，确保大概率的唯一性
 		ret = m_server->Init(CSockParam(m_path,SOCK_IS_SERVER));
 		if(ret != 0) return -4;
 		m_epoll.Create(count);
 		if(ret != 0) return -5;
+		//将套接字添加到epoll监控中
 		m_epoll.Add(*m_server, EpollData((void*)m_server));
 		if(ret != 0) return -6;
-		m_threads.resize(count);
+		m_threads.resize(count);//设置存储线程对象的容器的大小(std::vector<CThread*>)
 		for(unsigned i = 0; i < count; i++){
+			//创建线程 为每个线程分派 TaskDispatch 作为线程执行函数
 			m_threads[i] = new CThread(&CThreadPool::TaskDispatch, this);
 			if(m_threads[i] == nullptr) return -7;
 			ret = m_threads[i]->Start();
@@ -56,17 +72,19 @@ public:
 			m_server = nullptr;
 			delete p;
 		}
-		for(auto thread : m_threads){
+		for(const auto thread : m_threads){
 			delete thread;
 		}
 		m_threads.clear();
 		unlink(m_path);
 	}
+
+	//供外部模块 通过调用线程池对象 来添加任务 (函数指针 + 参数)
 	template<typename _FUNCTION_,typename... _ARGS_>
 	int AddTask(_FUNCTION_ func, _ARGS_... args) {
 		//每个线程在访问这个变量时，都会有自己的独立副本。
 		//这意味着一个线程对这个变量的修改不会影响到其他线程中的同名变量。
-		static  thread_local CSocket client;
+		static  thread_local CSocket client; //每个线程独立维护自己的 client
 		int ret{ 0 };
 		if(client == -1){
 			ret = client.Init(CSockParam(m_path, 0));
