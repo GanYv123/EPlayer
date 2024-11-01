@@ -34,7 +34,7 @@ public:
 	bool IsConnected() override;
 private:
 	static int ExecCallback(void* arg, const int count, char** names, char** values);
-	int ExecCallback(Result& result,const _Table_& table, int count, char** names, char** values);
+	int ExecCallback(Result& result, const _Table_& table, int count, char** names, char** values);
 private:
 	sqlite3_stmt* m_stmt;
 	sqlite3* m_db;
@@ -42,10 +42,10 @@ private:
 	class ExecParam
 	{
 	public:
-		ExecParam(CSqlite3Client* obj,Result& result,const _Table_& table)
-			:obj(obj),result(result),table(table)
+		ExecParam(CSqlite3Client* obj, Result& result, const _Table_& table)
+			:obj(obj), result(result), table(table)
 		{
-			
+
 		}
 		CSqlite3Client* obj;
 		Result& result;
@@ -58,47 +58,49 @@ class _sqlite3_table : public _Table_
 public:
 	_sqlite3_table() : _Table_(){}
 	_sqlite3_table(const _sqlite3_table& table);
-	 ~_sqlite3_table() override = default;
+	~_sqlite3_table() override = default;
 	//返回创建的sql语句
-	 Buffer Create()override;
+	Buffer Create()override;
 	//删除表
-	 Buffer Drop() override;
+	Buffer Drop() override;
 	//增删改查
-	 Buffer Insert(const _Table_& values) override;
-	 Buffer Delete(const _Table_& values) override;
-	 Buffer Modify(const _Table_& values) override;
-	 Buffer Query() override;
+	Buffer Insert(const _Table_& values) override;
+	Buffer Delete(const _Table_& values) override;
+	Buffer Modify(const _Table_& values) override;
+	Buffer Query() override;
 	//创建一个基于表的对象
-	 PTable Copy() const override;
-	 void ClearFieldUsed() override;
+	PTable Copy() const override;
+	void ClearFieldUsed() override;
 public:
 	//获取表的全名
-	 operator const Buffer() const override;
-	 
+	operator const Buffer() const override;
+
 };
 
-class _sqlite3_field_: public _Field_
+class _sqlite3_field_ : public _Field_
 {
 public:
 	_sqlite3_field_();
-	~_sqlite3_field_() override = default;
+	_sqlite3_field_(int ntype, const Buffer& name, unsigned attr, const Buffer& type, const Buffer& size, const Buffer& default_, const Buffer& check);
+	_sqlite3_field_(const _sqlite3_field_& field);
+	~_sqlite3_field_() override;
 	Buffer Create() override;
-	 void LoadFromStr(const Buffer& str) override;
+	void LoadFromStr(const Buffer& str) override;
 	//where 语句使用的
-	 Buffer toEqualExp()const override;
-	 Buffer toSqlStr()const override;
+	Buffer toEqualExp()const override;
+	Buffer toSqlStr()const override;
 	//列的全名
-	 operator const Buffer()const override;
+	operator const Buffer()const override;
 
 private:
-	 Buffer Str2Hex(const Buffer& data)const;
-	 union 
-	 {
+	Buffer Str2Hex(const Buffer& data)const;
+	union
+	{
 		bool Bool;
 		int Integer;
 		double Double;
 		Buffer* String;
 
-	 }Value;
-	 int nType;
+	}Value;
+	int nType;
 };

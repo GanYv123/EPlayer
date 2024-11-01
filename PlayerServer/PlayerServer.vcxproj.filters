@@ -12,6 +12,7 @@
     <ClCompile Include="sqlite3\sqlite3.c">
       <Filter>sqlite3</Filter>
     </ClCompile>
+    <ClCompile Include="Sqlite3Client.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CHttpParser.h" />
@@ -33,6 +34,7 @@
     <ClInclude Include="sqlite3\sqlite3ext.h">
       <Filter>sqlite3</Filter>
     </ClInclude>
+    <ClInclude Include="Sqlite3Client.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="sqlite3">

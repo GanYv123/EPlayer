@@ -180,15 +180,85 @@ int http_test() {
 	printf("host:%s port:%d\n", (char*)url2.Host(), url2.Port());
 	return 0;
 }
+#include "Sqlite3Client.h"
+DECLARE_TABLE_CLASS(user_test, _sqlite3_table)
+DECLARE_FIELD(TYPE_INT, user_id, NOT_NULL | PRIMARY_KEY | AUTOINCREMENT, "INTEGER", "", "", "")
+DECLARE_FIELD(TYPE_VARCHAR, user_qq, NOT_NULL, "VARCHAR", "(15)", "", "")
+DECLARE_FIELD(TYPE_VARCHAR, user_phone, NOT_NULL|DEFAULT, "VARCHAR", "(12)", "19999999999", "")
+DECLARE_FIELD(TYPE_TEXT, user_name, 0, "TEXT", "", "", "")
+DECLARE_TABLE_CLASSEND()
+
+/*class user_test :public _sqlite3_table
+{
+public:
+	PTable Copy() const override {
+		return std::make_shared<user_test>(*this);
+	}
+	user_test() :_sqlite3_table() {
+		Name = "user_test";
+		{
+			PFiled field(new _sqlite3_field_(TYPE_INT, "user_id", NOT_NULL | PRIMARY_KEY | AUTOINCREMENT, "INT", "", "", ""));
+			FieldDefine.push_back(field);
+			Fields["user_id"] = field;
+		}
+		{
+			PFiled field(new _sqlite3_field_(TYPE_VARCHAR, "user_qq", NOT_NULL | PRIMARY_KEY | AUTOINCREMENT, "VARCHAR", "(15)", "", ""));
+			FieldDefine.push_back(field);
+			Fields["user_id"] = field;
+		}
+	}
+};*/
 
 int sql_test() {
+	user_test test,value;
 
+	printf("create:%s\n", static_cast<char*>(test.Create()));
+	printf("Delete:%s\n", static_cast<char*>(test.Delete(test)));
+	value.Fields["user_qq"]->LoadFromStr("987654321");
+	value.Fields["user_qq"]->Condition = SQL_INSERT;
+	printf("Insert:%s\n", static_cast<char*>(test.Insert(value)));
+	value.Fields["user_qq"]->LoadFromStr("123456789");
+	value.Fields["user_qq"]->Condition = SQL_MODIFY;
+	printf("Modify:%s\n", static_cast<char*>(test.Modify(value)));
+	printf("Query:%s\n", static_cast<char*>(test.Query()));
+	printf("Drop:%s\n", static_cast<char*>(test.Drop()));
+	getchar();
+	CDatabaseClient* pClient = new CSqlite3Client();
+	KeyValue args;
+	args["host"] = "test.db";
+	int ret = pClient->Connect(args);
+	printf("%s(%d):<%s> Connect ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	ret = pClient->Exec(test.Create());
+	printf("%s(%d):<%s> Create ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	ret = pClient->Exec(test.Delete(value));
+	printf("%s(%d):<%s> Delete ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	value.Fields["user_qq"]->LoadFromStr("1725539791");
+	value.Fields["user_qq"]->Condition = SQL_INSERT;
+	ret = pClient->Exec(test.Insert(value));
+	printf("%s(%d):<%s> Insert ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	value.Fields["user_qq"]->LoadFromStr("15379762353");
+	value.Fields["user_qq"]->Condition = SQL_MODIFY;
+	ret = pClient->Exec(test.Modify(value));
+	printf("%s(%d):<%s> Modify ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	Result result;
+	ret = pClient->Exec(test.Query(),result,test);
+	printf("%s(%d):<%s> Query ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	ret = pClient->Exec(test.Drop());
+	printf("%s(%d):<%s> Drop ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+	ret = pClient->Close();
+	printf("%s(%d):<%s> Close ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
 	return 0;
+}
+
+int mysql_test() {
+	
 }
 
 int main() {
 
-	int ret = http_test();
+	/*int ret = http_test();
+	printf("main ret = %d\n", ret);*/
+	int ret = mysql_test();
 	printf("main ret = %d\n", ret);
 	return ret;
 }
