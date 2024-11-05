@@ -15,11 +15,11 @@ int CSqlite3Client::Connect(const KeyValue& args) {
 
 int CSqlite3Client::Exec(const Buffer& sql) {
 	if(m_db == nullptr) return -1;
-	printf("sql{%s}\n", (char*)sql);
+	printf("sql{%s}\n", static_cast<char*>(sql));
 	int ret = sqlite3_exec(m_db, sql, nullptr, this, nullptr);
 	if(ret != SQLITE_OK){
 		//TRACEE("sql{%s}", sql);
-		printf("error sql{%s}\n", (char*)sql);
+		printf("error sql{%s}\n", static_cast<char*>(sql));
 		//TRACEE("Exec failed%d<%s>", ret, sqlite3_errmsg(m_db));
 		printf("Exec failed%d<%s>\n", ret, sqlite3_errmsg(m_db));
 
@@ -30,13 +30,13 @@ int CSqlite3Client::Exec(const Buffer& sql) {
 
 int CSqlite3Client::Exec(const Buffer& sql, Result& result, const _Table_& table) {
 	if(m_db == nullptr) return -1;
-	printf("sql{%s}\n", (char*)sql);
+	printf("sql{%s}\n", static_cast<char*>(sql));
 	char* errmsg{ nullptr };
 	ExecParam param(this, result, table);
 	int ret = sqlite3_exec(m_db, sql, &CSqlite3Client::ExecCallback, (void*)&param, &errmsg);
 	if(ret != SQLITE_OK){
 		//TRACEE("sql{%s}", sql);
-		printf("error sql{%s}\n", (char*)sql);
+		printf("error sql{%s}\n", static_cast<char*>(sql));
 		TRACEE("Exec failed%d<%s>", ret, errmsg);
 		printf("Exec failed%d<%s>\n", ret, sqlite3_errmsg(m_db));
 
@@ -106,14 +106,14 @@ int CSqlite3Client::ExecCallback(Result& result, const _Table_& table, int count
 {
 	PTable pTable = table.Copy();
 	if(pTable == nullptr){
-		TRACEE("table %s error!", (const char*)(Buffer)table);
+		TRACEE("table %s error!", (const char*)static_cast<Buffer>(table));
 		return -1;
 	}
 	for(int i = 0; i < count; i++){
 		Buffer name = names[i];
 		auto it = pTable->Fields.find(name);
 		if(it == pTable->Fields.end()){
-			TRACEE("table %s error!", (const char*)(Buffer)table);
+			TRACEE("table %s error!", (const char*)static_cast<Buffer>(table));
 			return -2;
 		}
 		if(values[i] != nullptr)
@@ -127,7 +127,7 @@ _sqlite3_table::_sqlite3_table(const _sqlite3_table& table){
 	Database = table.Database;
 	Name = table.Name;
 	for(const auto& i : table.FieldDefine){
-		PFiled field = std::make_shared<_sqlite3_field_>(*dynamic_cast<_sqlite3_field_*>(i.get()));
+		PField field = std::make_shared<_sqlite3_field_>(*dynamic_cast<_sqlite3_field_*>(i.get()));
 		FieldDefine.push_back(field);
 		Fields[field->Name] = field;
 	}
@@ -155,7 +155,7 @@ Buffer _sqlite3_table::Drop() {
 Buffer _sqlite3_table::Insert(const _Table_& values) {
 	//INSERT INTO 表全名 (列1,... ,列n)
 	//VALUES(值1,...,值n);
-	Buffer sql = "INSERT INTO " + (Buffer)*this + " (";
+	Buffer sql = "INSERT INTO " + static_cast<Buffer>(*this) + " (";
 	bool isfirst = true;
 	for(size_t i = 0; i < values.FieldDefine.size(); i++){
 		if(values.FieldDefine[i]->Condition & SQL_INSERT){
@@ -200,7 +200,7 @@ Buffer _sqlite3_table::Delete(const _Table_& values) {
 
 Buffer _sqlite3_table::Modify(const _Table_& values) {
 	//UPDATE 表全名 SET 列1=值1,...,列n=值n [WHERE 条件];
-	Buffer sql = "UPDATE " + (Buffer)*this + " SET ";
+	Buffer sql = "UPDATE " + static_cast<Buffer>(*this) + " SET ";
 	bool isfirst = true;
 	for(size_t i = 0; i < values.FieldDefine.size(); i++){
 		if(values.FieldDefine[i]->Condition & SQL_MODIFY){

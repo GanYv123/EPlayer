@@ -40,9 +40,9 @@ public:
 
 //表和列的基类的实现
 class _Field_;
-using PFiled = std::shared_ptr<_Field_>;
-using FieldArray = std::vector<PFiled>;
-using FieldMap = std::map<Buffer, PFiled>;
+using PField = std::shared_ptr<_Field_>;
+using FieldArray = std::vector<PField>;
+using FieldMap = std::map<Buffer, PField>;
 
 
 class _Table_
@@ -153,7 +153,7 @@ virtual PTable Copy() const{return PTable(new name(*this));} \
 name():base(){Name=#name;
 
 #define DECLARE_FIELD(ntype,name,attr,type,size,default_,check) \
-{PFiled field(new _sqlite3_field_(ntype, #name, attr, type, size, default_, check)); \
+{PField field(new _sqlite3_field_(ntype, #name, attr, type, size, default_, check)); \
 FieldDefine.push_back(field); Fields[#name] = field;}
 
 #define DECLARE_TABLE_CLASSEND() }};
