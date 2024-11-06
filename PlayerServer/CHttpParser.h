@@ -63,6 +63,7 @@ public:
 	//默认返回80
 	int Port()const{ return m_port; }
 	void SetUrl(const Buffer& url);
+	Buffer Uri() const { return m_uri; }
 
 private:
 	Buffer m_url;

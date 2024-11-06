@@ -67,7 +67,7 @@ public:
 	Buffer Insert(const _Table_& values) override;
 	Buffer Delete(const _Table_& values) override;
 	Buffer Modify(const _Table_& values) override;
-	Buffer Query() override;
+	Buffer Query(const Buffer& condition = "") override;
 	//创建一个基于表的对象
 	PTable Copy() const override;
 	void ClearFieldUsed() override;

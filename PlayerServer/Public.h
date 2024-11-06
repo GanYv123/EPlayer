@@ -23,7 +23,10 @@ public:
 
 public:
 	// 返回一个非 const 的 char* 指针
+	operator void* () { return const_cast<char*>(c_str()); }
 	operator char* () { return const_cast<char*>(c_str()); }
 	operator char* () const { return const_cast<char*>(c_str()); }
+	operator unsigned char* (){ return (unsigned char*)c_str(); }
 	operator const char* () const { return c_str(); }
+	operator const void* () const { return c_str(); }
 };

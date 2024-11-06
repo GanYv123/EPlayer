@@ -63,12 +63,10 @@ public:
 	//删除表
 	Buffer Drop()override;
 	//增删改查
-	//TODO:参数进行优化
 	Buffer Insert(const _Table_& values)override;
 	Buffer Delete(const _Table_& values)override;
-	//TODO:参数进行优化
 	Buffer Modify(const _Table_& values)override;
-	Buffer Query() override;
+	Buffer Query(const Buffer& condition = "") override;
 	//创建一个基于表的对象
 	PTable Copy()const override;
 	void ClearFieldUsed()override;
@@ -102,15 +100,7 @@ public:
 	operator const Buffer() const override;
 private:
 	Buffer Str2Hex(const Buffer& data) const;
-	union
-	{
-		bool Bool;
-		int Integer;
-		double Double;
-		Buffer* String;
 
-	}Value;
-	int nType;
 };
 
 #ifdef DECLARE_TABLE_CLASS

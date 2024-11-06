@@ -214,13 +214,16 @@ Buffer _mysql_table_::Modify(const _Table_& values)
 	return sql;
 }
 
-Buffer _mysql_table_::Query() {
+Buffer _mysql_table_::Query(const Buffer& condition) {
 	Buffer sql = "SELECT ";
 	for(size_t i = 0; i < FieldDefine.size(); i++){
 		if(i > 0)sql += ',';
 		sql += '`' + FieldDefine[i]->Name + "` ";
 	}
 	sql += " FROM " + static_cast<Buffer>(*this) + " ";
+	if(!condition.empty()){
+		sql += "WHERE " + condition;
+	}
 	sql += ";";
 	printf("sql = %s\n", static_cast<char*>(sql));
 	return sql;

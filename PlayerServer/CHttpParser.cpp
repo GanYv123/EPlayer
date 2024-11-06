@@ -176,7 +176,7 @@ int UrlParser::Parser() {
 				Buffer kv(pos,target);
 				t = strchr(kv,'=');
 				if(t == nullptr) return -5;
-				m_values[Buffer(kv, t)] = Buffer(t + 1, kv + kv.size());
+				m_values[Buffer(kv, t)] = Buffer(t + 1, (char*)kv + kv.size());
 				pos = target + 1;
 			}
 		}while (target != nullptr);

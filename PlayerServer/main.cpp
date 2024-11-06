@@ -102,7 +102,7 @@ int oldtest() {
 int Main() {
 	CProcess procLog;
 	int ret{ 0 };
-	printf("%s(%d):<%s> pid=%d\n", __FILE__, __LINE__, __FUNCTION__, getpid());
+	//printf("%s(%d):<%s> pid=%d\n", __FILE__, __LINE__, __FUNCTION__, getpid());
 	ret = procLog.SetEntryFunction(CreateLogServer, &procLog);
 	ERR_RETURN(ret, -1)
 
@@ -310,13 +310,23 @@ int mysql_test()
 	return 0;
 }
 
+#include "Crypto.h"
+int crypot_test(){
+	const Buffer data = "0d000721";//87830FA13A49597B6CBD164F4B92E5C8
+	const auto result = Crypto::MD5(data);
+	printf("except:\t87830FA13A49597B6CBD164F4B92E5C8\n"
+		"result:\t%s", result.data());
+	return 0;
+}
 
 int main() {
 
 	/*int ret = http_test();
-	printf("main ret = %d\n", ret);*/
-	int ret = mysql_test();
 	printf("main ret = %d\n", ret);
-	return ret;
+	int ret = mysql_test();
+	printf("main ret = %d\n", ret); 
+	int ret = crypot_test();
+	*/
+	return Main();
 }
 

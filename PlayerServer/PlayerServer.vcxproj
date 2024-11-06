@@ -80,6 +80,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="CHttpParser.cpp" />
+    <ClCompile Include="Crypto.cpp" />
     <ClCompile Include="DatabaseHelper.cpp" />
     <ClCompile Include="Epoll.cpp" />
     <ClCompile Include="http_parser.c">
@@ -87,6 +88,9 @@
       <CppAdditionalWarning Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">switch;no-deprecated-declarations;empty-body;return-type;parentheses;no-format;uninitialized;unreachable-code;unused-function;unused-value;unused-variable;%(CppAdditionalWarning)</CppAdditionalWarning>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">-Wno-conversion %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
+    <ClCompile Include="jsoncpp\json_reader.cpp" />
+    <ClCompile Include="jsoncpp\json_value.cpp" />
+    <ClCompile Include="jsoncpp\json_writer.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MysqlClient.cpp" />
@@ -101,11 +105,23 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CHttpParser.h" />
+    <ClInclude Include="Crypto.h" />
     <ClInclude Include="DatabaseHelper.h" />
     <ClInclude Include="EPlayerServer.h" />
     <ClInclude Include="Epoll.h" />
     <ClInclude Include="Function.h" />
     <ClInclude Include="http_parser.h" />
+    <ClInclude Include="jsoncpp\allocator.h" />
+    <ClInclude Include="jsoncpp\assertions.h" />
+    <ClInclude Include="jsoncpp\config.h" />
+    <ClInclude Include="jsoncpp\forwards.h" />
+    <ClInclude Include="jsoncpp\json.h" />
+    <ClInclude Include="jsoncpp\json_features.h" />
+    <ClInclude Include="jsoncpp\json_tool.h" />
+    <ClInclude Include="jsoncpp\reader.h" />
+    <ClInclude Include="jsoncpp\value.h" />
+    <ClInclude Include="jsoncpp\version.h" />
+    <ClInclude Include="jsoncpp\writer.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="MysqlClient.h" />
     <ClInclude Include="Process.h" />
@@ -118,13 +134,16 @@
     <ClInclude Include="Thread.h" />
     <ClInclude Include="ThreadPool.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="jsoncpp\json_valueiterator.inl" />
+  </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PreprocessorDefinitions>_DEBUG</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <LibraryDependencies>pthread;m;dl;mysqlclient;</LibraryDependencies>
+      <LibraryDependencies>pthread;m;dl;mysqlclient;crypto;</LibraryDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
