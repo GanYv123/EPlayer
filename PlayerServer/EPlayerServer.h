@@ -54,7 +54,7 @@ public:
 		}
 		m_epoll.Close();
 		m_pool.Close();
-		for (const auto it : m_mapClients){
+		for(const auto it : m_mapClients){
 			delete it.second;
 		}
 		m_mapClients.clear();
@@ -79,29 +79,29 @@ public:
 			edoyunLogin_user_mysql user;
 		ret = m_db->Exec(user.Create());
 		ERR_RETURN(ret, -3)
-		ret = SetConnectCallback(&CEPlayerServer::Connected, this, _1);
+			ret = SetConnectCallback(&CEPlayerServer::Connected, this, _1);
 		ERR_RETURN(ret, -4)
-		ret = SetRecvCallback(&CEPlayerServer::Received, this, _1, _2);
+			ret = SetRecvCallback(&CEPlayerServer::Received, this, _1, _2);
 		ERR_RETURN(ret, -5)
-		ret = m_epoll.Create(m_count);
+			ret = m_epoll.Create(m_count);
 		ERR_RETURN(ret, -6)
-		ret = m_pool.Start(m_count);
+			ret = m_pool.Start(m_count);
 		ERR_RETURN(ret, -7)
-		for(unsigned i = 0; i < m_count; i++){
-			ret = m_pool.AddTask(&CEPlayerServer::ThreadFunc,this);
-			ERR_RETURN(ret, -8)
-		}
+			for(unsigned i = 0; i < m_count; i++){
+				ret = m_pool.AddTask(&CEPlayerServer::ThreadFunc, this);
+				ERR_RETURN(ret, -8)
+			}
 		int sock = 0;
 		sockaddr_in addrin;
 		while(m_epoll != -1){
-			ret = proc->RecvSocket(sock,&addrin);
+			ret = proc->RecvSocket(sock, &addrin);
 			if(ret < 0 || (sock == 0)) break;
 			CSocketBase* pClient = new CSocket(sock);
 			if(pClient == nullptr)continue;
-			ret = pClient->Init(CSockParam(&addrin,SOCK_IS_IP));
+			ret = pClient->Init(CSockParam(&addrin, SOCK_IS_IP));
 			WARN_CONTINUE(ret)
 
-			ret = m_epoll.Add(sock, EpollData((void*)pClient));
+				ret = m_epoll.Add(sock, EpollData((void*)pClient));
 
 			if(m_connectedcallback){
 				(*m_connectedcallback)(pClient);
@@ -115,10 +115,10 @@ private:
 	int Connected(CSocketBase* pClient) {
 		//客户端连接处理
 		sockaddr_in* paddr = *pClient;
-		TRACEI("client connected addr:%s port:%d", inet_ntoa(paddr->sin_addr) ,paddr->sin_port);
+		TRACEI("client connected addr:%s port:%d", inet_ntoa(paddr->sin_addr), paddr->sin_port);
 		return 0;
 	}
-	int Received(CSocketBase* pClient,const Buffer& data) {
+	int Received(CSocketBase* pClient, const Buffer& data) {
 		//主要业务处理
 		//Http 解析 数据库查询 登陆请求验证
 		int ret{ 0 };
@@ -135,7 +135,7 @@ private:
 		if(ret != 0){
 			TRACEE("http response failed!%d <%s>", ret, (char*)response);
 
-		}else{
+		} else{
 			TRACEI("http response success!%d", ret);
 
 		}
@@ -149,14 +149,14 @@ private:
 			return -1;
 		}
 		if(parser.Method() == HTTP_GET){
-			UrlParser url("https://192.168.133.133"+parser.Url());
+			UrlParser url("https://192.168.133.133" + parser.Url());
 			int ret = url.Parser();
-			if(ret!=0){
-				TRACEE("ret=%d url[%s]", ret , "https://192.168.133.133" + parser.Url());
+			if(ret != 0){
+				TRACEE("ret=%d url[%s]", ret, "https://192.168.133.133" + parser.Url());
 				return -2;
 			}
 			Buffer uri = url.Uri();
-			if(uri=="login"){
+			if(uri == "login"){
 				//处理登陆
 				Buffer time = url["time"];
 				Buffer salt = url["salt"];
@@ -194,8 +194,8 @@ private:
 				return -6;
 
 			}
-		}else if(parser.Method() == HTTP_POST){
-			
+		} else if(parser.Method() == HTTP_POST){
+
 		}
 		return -7;
 	}
@@ -205,7 +205,7 @@ private:
 
 		if(ret != 0){
 			root["message"] = "登陆失败,可能是用户名或者密码错误!";
-		}else{
+		} else{
 			root["message"] = "success";
 		}
 		Buffer json = root.toStyledString();
@@ -238,13 +238,15 @@ private:
 				for(size_t i = 0; i < static_cast<size_t>(size); i++){
 					if(events[i].events & EPOLLERR) break;
 					if(events[i].events & EPOLLIN){
-						const auto pClient{ static_cast<CSocketBase*>(events[i].data.ptr)};
+						const auto pClient{ static_cast<CSocketBase*>(events[i].data.ptr) };
 						if(pClient){
 							Buffer data;
 							ret = pClient->Recv(data);
-							WARN_CONTINUE(ret)
+							if(ret != 0){
+								TRACEW("ret=%d errno=%d msg=<%s>", ret, errno, strerror(errno));			continue;
+							}
 							if(m_recvedcallback){
-								(*m_recvedcallback)(pClient,data);
+								(*m_recvedcallback)(pClient, data);
 							}
 						}
 					}

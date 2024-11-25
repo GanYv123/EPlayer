@@ -92,7 +92,7 @@ public:
 			return -4;
 		}
 		//±¾µØÌ×½Ó×Ö
-		ret = m_server->Init(CSockParam("./log/server.sock", static_cast<int>(SOCK_IS_SERVER)));
+		ret = m_server->Init(CSockParam("./log/server.sock", static_cast<int>(SOCK_IS_SERVER| SOCK_IS_REUSE)));
 		if(ret != 0){
 			printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
 			Close();

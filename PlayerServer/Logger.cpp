@@ -158,7 +158,7 @@ int CLoggerServer::ThreadFunc() const {
 	std::map<int, CSocketBase*> mapClient;
 	while(m_thread.IsValid() && (m_epoll != -1) && (m_server != nullptr)){
 		const ssize_t ret = m_epoll.WaitEvents(events, 1000);
-		printf("%s(%d):<%s> ret=%ld\n", __FILE__, __LINE__, __FUNCTION__, ret);
+		//printf("%s(%d):<%s> ret=%ld\n", __FILE__, __LINE__, __FUNCTION__, ret);
 		if(ret < 0)break;
 		if(ret > 0){
 			ssize_t i = 0;

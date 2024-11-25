@@ -81,7 +81,7 @@ public:
 	CServer& operator=(const CServer&) = delete;
 
 public:
-	int Init(CBusiness* business,const Buffer& ip = "127.0.0.1",short port = 9999);
+	int Init(CBusiness* business,const Buffer& ip = "0.0.0.0",short port = 9999);
 	int Run() const;
 	int Close();
 protected:

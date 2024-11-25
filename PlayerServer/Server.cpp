@@ -20,7 +20,7 @@ int CServer::Init(CBusiness* business, const Buffer& ip, short port) {
 	if(ret != 0)return -5;
 	m_server = new CSocket();
 	if(m_server == nullptr) return -6;
-	ret = m_server->Init(CSockParam(ip, port, SOCK_IS_SERVER | SOCK_IS_IP));
+	ret = m_server->Init(CSockParam(ip, port, SOCK_IS_SERVER | SOCK_IS_IP| SOCK_IS_REUSE));
 	if(ret != 0)return -7;
 	ret = m_epoll.Add(*m_server,EpollData((void*)m_server));
 	if(ret != 0)return -8;
@@ -70,11 +70,12 @@ int CServer::ThreadFunc() {
 						ret = m_server->Link(&pClient);
 						if(ret != 0) continue;
 						ret = m_process.SendSocket(*pClient,*pClient);
-						delete pClient;
 						if(ret != 0){
 							TRACEE("send client %d failed",(int)*pClient);
+							delete pClient;
 							continue;
 						}
+						delete pClient;
 
 					}
 				}
