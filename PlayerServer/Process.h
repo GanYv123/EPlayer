@@ -116,46 +116,56 @@ public:
 	}
 
 
-	int SendSocket(const int fd,const sockaddr_in* addrin) {//主进程完成
-		struct msghdr msg;
-		iovec iov[2];
-		char buf[2][30] = { "edoyun" ,"zhaoxuyang" };
-		iov[0].iov_base = (void*)addrin;
-		iov[0].iov_len = sizeof(sockaddr_in);
-		iov[1].iov_base = buf[1];
-		iov[1].iov_len = sizeof(buf[1]);
-		msg.msg_iov = iov;
-		msg.msg_iovlen = 2;
-		//下面是要传入的数据
-		const auto cmsg = static_cast<cmsghdr*>(calloc(1, CMSG_LEN(sizeof(int))));
-		if(cmsg == nullptr) return -1;
-		cmsg->cmsg_len = CMSG_LEN(sizeof(int));
-		cmsg->cmsg_level = SOL_SOCKET;
-		cmsg->cmsg_type = SCM_RIGHTS;
-		*(int*)CMSG_DATA(cmsg) = fd;
-		msg.msg_control = cmsg;
-		msg.msg_controllen = cmsg->cmsg_len;
+	int SendSocket(const int fd, const sockaddr_in* addrin) {
+		if(addrin == nullptr) return -1; // 检查输入参数是否合法
+		struct msghdr msg = {}; // 初始化消息结构体
+		struct iovec iov;   // 存储两个数据段
+		char buf[20]="";
+		bzero(&msg, sizeof(msg));
+		memcpy(buf, addrin, sizeof(sockaddr_in));
+		// 设置第一个数据段（sockaddr_in）
+		iov.iov_base = buf;
+		iov.iov_len = sizeof(buf);
+		msg.msg_iov = &iov;         // 设置消息中的数据段数组
+		msg.msg_iovlen = 1;        // 数据段数量
 
-		const ssize_t ret = sendmsg(pipes[1], &msg, 0);
-		printf("%s(%d):<%s> ret=%ld\n", __FILE__, __LINE__, __FUNCTION__, ret);
-
-		free(cmsg);
-		if(ret == -1){
-			return -2;
+		// 分配并设置控制消息，用于传递文件描述符
+		struct cmsghdr* cmsg = (cmsghdr*)malloc(CMSG_LEN(sizeof(int)));
+		if(cmsg == nullptr){
+			perror("malloc failed"); // 打印内存分配错误信息
+			return -2;               // 返回错误码
 		}
-		return 0;
+		cmsg->cmsg_len = CMSG_LEN(sizeof(int));   // 设置控制消息长度
+		cmsg->cmsg_level = SOL_SOCKET;            // 设置控制消息级别
+		cmsg->cmsg_type = SCM_RIGHTS;             // 设置控制消息类型
+		*(int*)CMSG_DATA(cmsg) = fd;              // 将文件描述符存入控制消息
+		msg.msg_control = cmsg;                   // 设置控制消息
+		msg.msg_controllen = cmsg->cmsg_len;
+		// 发送消息
+		const ssize_t ret = sendmsg(pipes[1], &msg, 0);
+		if(ret == -1){
+			perror("sendmsg failed"); // 打印发送错误信息
+			free(cmsg);               // 释放控制消息内存
+			return -3;                // 返回错误码
+		}
+		// 打印调试信息
+		printf("%s(%d):<%s> ret=%ld\n", __FILE__, __LINE__, __FUNCTION__, ret);
+		// 释放控制消息内存
+		free(cmsg);
+		return 0; // 成功返回 0
 	}
+
 
 	int RecvSocket(int& fd,sockaddr_in* addrin) {
 		msghdr msg;
-		iovec iov[2];
-		char buf[2][30]{ "","" };
-		iov[0].iov_base = addrin;
-		iov[0].iov_len = sizeof(sockaddr_in);
-		iov[1].iov_base = buf[1];
-		iov[1].iov_len = sizeof(buf[1]);
-		msg.msg_iov = iov;
-		msg.msg_iovlen = 2;
+		iovec iov;
+		char buf[20]{ "" };
+		bzero(&msg, sizeof(msg));
+
+		iov.iov_base = buf;
+		iov.iov_len = sizeof(buf);
+		msg.msg_iov = &iov;
+		msg.msg_iovlen = 1;
 
 		const auto cmsg = static_cast<cmsghdr*>(calloc(1, CMSG_LEN(sizeof(int))));
 		if(cmsg == nullptr) return -1;
@@ -171,6 +181,8 @@ public:
 			printf("%s(%d):<%s> recvmsg:ret=%ld\n", __FILE__, __LINE__, __FUNCTION__, ret);
 			return -2;
 		}
+		memcpy(addrin, buf, sizeof(sockaddr_in));
+
 		fd = *reinterpret_cast<int*>(CMSG_DATA(cmsg));
 		free(cmsg);
 

@@ -94,7 +94,7 @@ public:
 		//±¾µØÌ×½Ó×Ö
 		ret = m_server->Init(CSockParam("./log/server.sock", static_cast<int>(SOCK_IS_SERVER| SOCK_IS_REUSE)));
 		if(ret != 0){
-			printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+			//printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
 			Close();
 			return -5;
 		}
@@ -105,7 +105,7 @@ public:
 		}
 		ret = m_thread.Start();
 		if(ret != 0){
-			printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
+			//printf("%s(%d):<%s> ret=%d\n", __FILE__, __LINE__, __FUNCTION__, ret);
 			Close();
 			return -7;
 		}
@@ -138,13 +138,13 @@ public:
 #endif
 				return;
 			}
-			printf("%s(%d):<%s> ret=%d client:%d\n", __FILE__, __LINE__, __FUNCTION__, ret, (int)client);
+			//printf("%s(%d):<%s> ret=%d client:%d\n", __FILE__, __LINE__, __FUNCTION__, ret, (int)client);
 			ret = client.Link();
-			printf("%s(%d):<%s> ret=%d client:%d\n", __FILE__, __LINE__, __FUNCTION__, ret, (int)client);
+			//printf("%s(%d):<%s> ret=%d client:%d\n", __FILE__, __LINE__, __FUNCTION__, ret, (int)client);
 
 		}
 		ret = client.Send(info);
-		printf("%s(%d):<%s> ret=%d client:%d\n", __FILE__, __LINE__, __FUNCTION__, ret, (int)client);
+		//printf("%s(%d):<%s> ret=%d client:%d\n", __FILE__, __LINE__, __FUNCTION__, ret, (int)client);
 
 	}
 

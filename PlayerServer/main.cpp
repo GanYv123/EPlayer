@@ -103,18 +103,20 @@ int Main() {
 	CProcess procLog;
 	int ret{ 0 };
 	//printf("%s(%d):<%s> pid=%d\n", __FILE__, __LINE__, __FUNCTION__, getpid());
-	ret = procLog.SetEntryFunction(CreateLogServer, &procLog);
+	ret = procLog.SetEntryFunction(CreateLogServer, &procLog);//启用日志模块
 	ERR_RETURN(ret, -1)
 
+	//启动子线程
 	ret = procLog.CreateSubProcess();
 	ERR_RETURN(ret, -2)
 	CEPlayerServer business(2);
+
 	CServer server;
 	ret = server.Init(&business);
 	ERR_RETURN(ret, -3)
-		ret = server.Run();
+	ret = server.Run();
 	ERR_RETURN(ret, -4)
-
+	TRACED("Main 函数结束!");
 	return 0;
 }
 
@@ -258,7 +260,7 @@ DECLARE_MYSQL_FIELD(TYPE_VARCHAR, user_phone, NOT_NULL | DEFAULT, "VARCHAR", "(1
 DECLARE_MYSQL_FIELD(TYPE_TEXT, user_name, 0, "TEXT", "", "", "")
 DECLARE_TABLE_CLASS_EDN()
 
-
+/*
 int mysql_test()
 {
 	user_test_mysql test, value;
@@ -309,13 +311,34 @@ int mysql_test()
 	//getchar();
 	return 0;
 }
-
+*/
 #include "Crypto.h"
 int crypot_test(){
 	const Buffer data = "0d000721";//87830FA13A49597B6CBD164F4B92E5C8
 	const auto result = Crypto::MD5(data);
 	printf("except:\t87830FA13A49597B6CBD164F4B92E5C8\n"
 		"result:\t%s", result.data());
+	return 0;
+}
+
+int TestHttpRequest() {
+	CProcess procLog;
+	int ret{ 0 };
+	//printf("%s(%d):<%s> pid=%d\n", __FILE__, __LINE__, __FUNCTION__, getpid());
+	ret = procLog.SetEntryFunction(CreateLogServer, &procLog);//启用日志模块
+	ERR_RETURN(ret, -1)
+
+	//启动子线程
+	ret = procLog.CreateSubProcess();
+	ERR_RETURN(ret, -2)
+	CEPlayerServer business(2);
+
+	CServer server;
+	ret = server.Init(&business);
+	ERR_RETURN(ret, -3)
+	ret = server.Run();
+	ERR_RETURN(ret, -4)
+	TRACED("Main 函数结束!");
 	return 0;
 }
 
@@ -327,6 +350,6 @@ int main() {
 	printf("main ret = %d\n", ret); 
 	int ret = crypot_test();
 	*/
-	return Main();
+	return TestHttpRequest();
 }
 

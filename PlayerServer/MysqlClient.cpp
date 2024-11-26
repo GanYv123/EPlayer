@@ -25,7 +25,7 @@ int CMysqlClient::Exec(const Buffer& sql)
 	int ret = mysql_real_query(&m_db, sql, sql.size());
 	if(ret != 0){
 		printf("%s %d %s\n", __FUNCTION__, mysql_errno(&m_db), mysql_error(&m_db));
-		//TRACEE("%d %s", mysql_errno(&m_db), mysql_error(&m_db);
+		TRACEE("%d %s", mysql_errno(&m_db), mysql_error(&m_db));
 		return -2;
 	}
 	return 0;

@@ -11,7 +11,7 @@
 DECLARE_TABLE_CLASS(edoyunLogin_user_mysql, _mysql_table_)
 DECLARE_MYSQL_FIELD(TYPE_INT, user_id, NOT_NULL | PRIMARY_KEY | AUTOINCREMENT, "INTEGER", "", "", "")
 DECLARE_MYSQL_FIELD(TYPE_VARCHAR, user_qq, NOT_NULL, "VARCHAR", "(15)", "", "")  //QQ号
-DECLARE_MYSQL_FIELD(TYPE_VARCHAR, user_phone, DEFAULT, "VARCHAR", "(11)", "'18888888888'", "")//手机
+DECLARE_MYSQL_FIELD(TYPE_VARCHAR, user_phone, DEFAULT, "VARCHAR", "(15)", "'18888888888'", "")//手机
 DECLARE_MYSQL_FIELD(TYPE_TEXT, user_name, NOT_NULL, "TEXT", "", "", "")  //姓名
 DECLARE_MYSQL_FIELD(TYPE_TEXT, user_nick, NOT_NULL, "TEXT", "", "", "")  //昵称
 DECLARE_MYSQL_FIELD(TYPE_TEXT, user_wechat, DEFAULT, "TEXT", "", "NULL", "")
@@ -31,7 +31,6 @@ DECLARE_MYSQL_FIELD(TYPE_TEXT, user_password, NOT_NULL, "TEXT", "", "", "")
 DECLARE_MYSQL_FIELD(TYPE_INT, user_birthday, NONE, "DATETIME", "", "", "")
 DECLARE_MYSQL_FIELD(TYPE_TEXT, user_describe, NONE, "TEXT", "", "", "")
 DECLARE_MYSQL_FIELD(TYPE_TEXT, user_education, NONE, "TEXT", "", "", "")
-DECLARE_MYSQL_FIELD(TYPE_INT, user_register_time, DEFAULT, "DATETIME", "", "LOCALTIME()", "")
 DECLARE_TABLE_CLASS_EDN()
 
 
@@ -46,7 +45,7 @@ public:
 		m_count = count;
 	}
 	~CEPlayerServer() {
-		if(m_db){
+		if(m_db != nullptr){
 			CDatabaseClient* db = m_db;
 			m_db = nullptr;
 			db->Close();
@@ -76,33 +75,36 @@ public:
 		args["db"] = "edoyun";
 		ret = m_db->Connect(args);
 		ERR_RETURN(ret, -2)
-			edoyunLogin_user_mysql user;
+		edoyunLogin_user_mysql user;
 		ret = m_db->Exec(user.Create());
 		ERR_RETURN(ret, -3)
-			ret = SetConnectCallback(&CEPlayerServer::Connected, this, _1);
+		ret = SetConnectCallback(&CEPlayerServer::Connected, this, _1);
+		TRACEI("*** SetConnectCallback ***");
+
 		ERR_RETURN(ret, -4)
-			ret = SetRecvCallback(&CEPlayerServer::Received, this, _1, _2);
+		ret = SetRecvCallback(&CEPlayerServer::Received, this, _1, _2);
 		ERR_RETURN(ret, -5)
-			ret = m_epoll.Create(m_count);
+		ret = m_epoll.Create(m_count);
 		ERR_RETURN(ret, -6)
-			ret = m_pool.Start(m_count);
+		ret = m_pool.Start(m_count);
 		ERR_RETURN(ret, -7)
-			for(unsigned i = 0; i < m_count; i++){
-				ret = m_pool.AddTask(&CEPlayerServer::ThreadFunc, this);
-				ERR_RETURN(ret, -8)
-			}
+		for(unsigned i = 0; i < m_count; i++){
+			ret = m_pool.AddTask(&CEPlayerServer::ThreadFunc, this);
+			ERR_RETURN(ret, -8)
+		}
+		TRACED("m_pool.AddTask(&CEPlayerServer::ThreadFunc)");
+
 		int sock = 0;
 		sockaddr_in addrin;
 		while(m_epoll != -1){
 			ret = proc->RecvSocket(sock, &addrin);
+			TRACEI("RecvSocket ret:%d",ret);
 			if(ret < 0 || (sock == 0)) break;
 			CSocketBase* pClient = new CSocket(sock);
 			if(pClient == nullptr)continue;
 			ret = pClient->Init(CSockParam(&addrin, SOCK_IS_IP));
 			WARN_CONTINUE(ret)
-
-				ret = m_epoll.Add(sock, EpollData((void*)pClient));
-
+			ret = m_epoll.Add(sock, EpollData((void*)pClient));
 			if(m_connectedcallback){
 				(*m_connectedcallback)(pClient);
 			}
@@ -118,12 +120,16 @@ private:
 		TRACEI("client connected addr:%s port:%d", inet_ntoa(paddr->sin_addr), paddr->sin_port);
 		return 0;
 	}
+
 	int Received(CSocketBase* pClient, const Buffer& data) {
+		TRACEI("接收到数据：!");
 		//主要业务处理
 		//Http 解析 数据库查询 登陆请求验证
 		int ret{ 0 };
 		Buffer response = "";
 		ret = HttpParser(data);
+		TRACED("HttpParser:%d",ret);
+
 		// 验证结果反馈
 		if(ret != 0){//验证失败
 			TRACEE("http parser failed!%d", ret);
@@ -141,6 +147,7 @@ private:
 		}
 		return 0;
 	}
+
 	int HttpParser(const Buffer& data) {
 		CHttpParser parser;
 		size_t size = parser.Parser(data);
@@ -181,6 +188,7 @@ private:
 					TRACEE("more than one sql=%s ret=%d", (char*)sql, ret);
 					return -5;
 				}
+
 				auto user1 = result.front();
 				Buffer pwd = *user1->Fields["user_password"]->Value.String;
 				TRACEI("password = %s", (char*)pwd);
@@ -199,7 +207,8 @@ private:
 		}
 		return -7;
 	}
-	Buffer MakeResponse(int ret) {
+
+	static Buffer MakeResponse(int ret) {
 		Json::Value root;
 		root["status"] = ret;
 
@@ -229,12 +238,15 @@ private:
 	int ThreadFunc() {
 		int ret{ 0 };
 		EP_EVENTS events;
+		TRACEI("ThreadFunc(EP)");
+
 		while(m_epoll != -1){
 			const ssize_t size = m_epoll.WaitEvents(events);
 			if(size < 0){
 				break;
 			}
 			if(size > 0){
+				TRACEI("m_epoll.WaitEvents(events) > 0");
 				for(size_t i = 0; i < static_cast<size_t>(size); i++){
 					if(events[i].events & EPOLLERR) break;
 					if(events[i].events & EPOLLIN){
@@ -242,8 +254,11 @@ private:
 						if(pClient){
 							Buffer data;
 							ret = pClient->Recv(data);
-							if(ret != 0){
-								TRACEW("ret=%d errno=%d msg=<%s>", ret, errno, strerror(errno));			continue;
+							TRACEI("recv data size:%d", ret);
+							if(ret <= 0){
+								TRACEW("ret=%d errno=%d msg=<%s>", ret, errno, strerror(errno));
+								m_epoll.Del(*pClient);
+								continue;
 							}
 							if(m_recvedcallback){
 								(*m_recvedcallback)(pClient, data);

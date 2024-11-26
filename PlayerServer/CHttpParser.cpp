@@ -158,10 +158,10 @@ int UrlParser::Parser() {
 	pos = strchr(pos, '/') + 1;
 	target = strchr(pos, '?');
 	if(target == nullptr){
-		m_uri = pos;
+		m_uri = pos+1;
 		return 0;
 	}else{
-		m_uri = Buffer(pos, target);
+		m_uri = Buffer(pos+1, target);
 		//解析key value
 		pos = target + 1;
 		const char* t{nullptr};

@@ -188,10 +188,10 @@ int CLoggerServer::ThreadFunc() const {
 								delete it->second;
 						}
 						mapClient[*pClient] = pClient;
-						printf("%s(%d):<%s>\n", __FILE__, __LINE__, __FUNCTION__);
+						//printf("%s(%d):<%s>\n", __FILE__, __LINE__, __FUNCTION__);
 
 					} else{ //客户端
-						printf("%s(%d):<%s> ptr=%p\n", __FILE__, __LINE__, __FUNCTION__, events[i].data.ptr);
+						//printf("%s(%d):<%s> ptr=%p\n", __FILE__, __LINE__, __FUNCTION__, events[i].data.ptr);
 
 						const auto pClient = static_cast<CSocketBase*>(events[i].data.ptr);
 						if(pClient != nullptr){
