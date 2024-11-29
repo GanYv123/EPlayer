@@ -225,7 +225,7 @@ Buffer _mysql_table_::Query(const Buffer& condition) {
 		sql += "WHERE " + condition;
 	}
 	sql += ";";
-	printf("sql = %s\n", static_cast<char*>(sql));
+	//printf("sql = %s\n", static_cast<char*>(sql));
 	return sql;
 }
 

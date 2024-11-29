@@ -14,7 +14,7 @@ public:
 		MD5_Final(data, &md5);
 		char temp[3] = "";
 		for (size_t i = 0;i < data.size();i++){
-			snprintf(temp, sizeof(temp), "%02X", data[i] & 0XFF);
+			snprintf(temp, sizeof(temp), "%02x", data[i] & 0XFF);
 			result += temp;
 		}
 		return result;
