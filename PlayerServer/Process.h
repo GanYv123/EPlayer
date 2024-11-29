@@ -1,12 +1,9 @@
 #pragma once
 #include "Function.h"
 #include <cstdio>
-#include <stdlib.h>
 #include <memory.h>
-#include <errno.h>    // ”√”⁄ errno
 #include <sys/socket.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 #include <signal.h>
 #include <netinet/in.h>
 

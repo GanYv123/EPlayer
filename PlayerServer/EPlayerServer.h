@@ -67,12 +67,14 @@ public:
 			TRACEE("no more memory!");
 			return -1;
 		}
+
 		KeyValue args;
 		args["host"] = "192.168.133.133";
 		args["user"] = "miku";
 		args["password"] = "123";
 		args["port"] = 3306;
 		args["db"] = "edoyun";
+
 		ret = m_db->Connect(args);
 		ERR_RETURN(ret, -2)
 		edoyunLogin_user_mysql user;
@@ -88,6 +90,7 @@ public:
 		ERR_RETURN(ret, -6)
 		ret = m_pool.Start(m_count);
 		ERR_RETURN(ret, -7)
+
 		for(unsigned i = 0; i < m_count; i++){
 			ret = m_pool.AddTask(&CEPlayerServer::ThreadFunc, this);
 			ERR_RETURN(ret, -8)
@@ -122,7 +125,7 @@ private:
 	}
 
 	int Received(CSocketBase* pClient, const Buffer& data) {
-		TRACEI("接收到数据：!");
+		TRACEI("recv DATA:<%s>",(char*)data);
 		//主要业务处理
 		//Http 解析 数据库查询 登陆请求验证
 		int ret{ 0 };
@@ -148,12 +151,30 @@ private:
 		return 0;
 	}
 
+	/**
+ * 错误返回值说明：
+ * -1: HTTP 请求解析失败。
+ *     原因可能是解析器返回的 `size` 为 0，或者解析器的 `Errno()` 返回了非 0 的错误码。
+ * -2: URL 解析失败。
+ *     原因可能是 `UrlParser::Parser()` 方法返回了非 0 的错误码。
+ * -3: 数据库查询执行失败。
+ *     原因可能是执行 SQL 查询时返回了错误码（`m_db->Exec()` 返回值非 0）。
+ * -4: 数据库中没有找到对应的用户记录。
+ *     原因可能是查询结果为空（`result.empty()`）。
+ * -5: 数据库查询返回了多个用户记录。
+ *     原因可能是查询条件不够唯一，导致返回的记录数超过 1。
+ * -6: 签名验证失败。
+ *     原因可能是客户端提供的 `sign` 值与计算出的 MD5 值不匹配。
+ * -7: 处理 HTTP 请求时出现未知的请求类型或异常。
+ *     原因可能是既不是 GET 请求，也不是 POST 请求，或没有为 POST 请求提供处理逻辑。
+ */
 	int HttpParser(const Buffer& data) {
 		CHttpParser parser;
 		size_t size = parser.Parser(data);
+		TRACED("HttpParser:%s",(char*)data);
 		if(size == 0 || (parser.Errno() != 0)){
 			TRACEE("size:%llu errno:%u", size, parser.Errno());
-			return -1;
+			return -1; //解析失败
 		}
 		if(parser.Method() == HTTP_GET){
 			UrlParser url("https://192.168.133.133" + parser.Url());
@@ -163,6 +184,7 @@ private:
 				return -2;
 			}
 			Buffer uri = url.Uri();
+			TRACED("uri:%s",(char*)uri);
 			if(uri == "login"){
 				//处理登陆
 				Buffer time = url["time"];
@@ -171,7 +193,7 @@ private:
 				Buffer sign = url["sign"];
 				TRACEI("time:%s salt:%s user:%s:sign %s", (char*)time, (char*)salt, (char*)user, (char*)sign);
 				//数据库查询，登陆请求验证
-
+				TRACED("check sign info from DB");
 				edoyunLogin_user_mysql dbuser;
 				Result result;
 				Buffer sql = dbuser.Query("user_name=\"" + user + "\"");
@@ -203,13 +225,20 @@ private:
 
 			}
 		} else if(parser.Method() == HTTP_POST){
-
+			//post处理
 		}
 		return -7;
 	}
 
+	/**
+	 * http格式：
+	 * 状态行
+	 * 响应头1<key(头名),value(响应值)>
+	 * @param ret 
+	 * @return 
+	 */
 	static Buffer MakeResponse(int ret) {
-		Json::Value root;
+		Json::Value root; //创建Json对象：
 		root["status"] = ret;
 
 		if(ret != 0){
@@ -218,7 +247,7 @@ private:
 			root["message"] = "success";
 		}
 		Buffer json = root.toStyledString();
-		Buffer result = "HTTP/1.1 200 OK\r\n";
+		Buffer result = "HTTP/1.1 200 OK\r\n"; //状态行
 		time_t t;
 		time(&t);
 		tm* ptm = localtime(&t);
@@ -230,7 +259,9 @@ private:
 		Buffer Length = Buffer("Content-Length: ") + temp + "\r\n";
 		Buffer Stub = "X-Content-Type-Options: nosniff\r\nReferrer-Policy: same-origin\r\n\r\n";
 		result += Date + Server + Length + Stub + json;
-		TRACEI("respomse: %s", (char*)result);
+		TRACEI("\n<<----------------- respomse start ----------------->>:\n"
+										" %s\n"
+                 "<<----------------- respomse end ----------------->>", (char*)result);
 		return result;
 	}
 
@@ -246,7 +277,6 @@ private:
 				break;
 			}
 			if(size > 0){
-				TRACEI("m_epoll.WaitEvents(events) > 0");
 				for(size_t i = 0; i < static_cast<size_t>(size); i++){
 					if(events[i].events & EPOLLERR) break;
 					if(events[i].events & EPOLLIN){

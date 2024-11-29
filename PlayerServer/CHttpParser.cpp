@@ -44,7 +44,7 @@ CHttpParser& CHttpParser::operator=(const CHttpParser& http) {
 
 size_t CHttpParser::Parser(const Buffer& data) {
 	m_complete = false;
-	size_t ret{http_parser_execute(&m_parser,&m_settings,data,data.size())};
+	size_t ret{ http_parser_execute(&m_parser,&m_settings,data,data.size()) };
 	if(m_complete == false){
 		m_parser.http_errno = 0x7f;
 		return 0;
@@ -57,7 +57,7 @@ int CHttpParser::OnMessageBegin(http_parser* parser) {
 }
 
 int CHttpParser::OnUrl(http_parser* parser, const char* at, size_t length) {
-	return static_cast<CHttpParser*>(parser->data)->OnUrl(at,length);
+	return static_cast<CHttpParser*>(parser->data)->OnUrl(at, length);
 }
 
 int CHttpParser::OnStatus(http_parser* parser, const char* at, size_t length) {
@@ -150,37 +150,37 @@ int UrlParser::Parser() {
 	if(target != nullptr){
 		m_host = Buffer(value, target);
 		//端口
-		m_port = atoi(Buffer(target + 1, static_cast<char*>(value)+value.size()));
-	}else{
+		m_port = atoi(Buffer(target + 1, static_cast<char*>(value) + value.size()));
+	} else{
 		m_host = value;
 	}
-	//解析uri
-	pos = strchr(pos, '/') + 1;
+	// 解析 URI
+	pos = strchr(pos, '/');
 	target = strchr(pos, '?');
 	if(target == nullptr){
-		m_uri = pos+1;
+		m_uri = Buffer(pos + 1); // 修正：从 '/' 后开始解析完整路径
 		return 0;
-	}else{
-		m_uri = Buffer(pos+1, target);
-		//解析key value
-		pos = target + 1;
-		const char* t{nullptr};
-		do{
-			target = strchr(pos, '&');
-			if(target == nullptr){
-				t = strchr(pos, '=');
-				if(t == nullptr) return -4;
-				m_values[Buffer(pos, t)] = Buffer(t + 1);
-
-			}else{
-				Buffer kv(pos,target);
-				t = strchr(kv,'=');
-				if(t == nullptr) return -5;
-				m_values[Buffer(kv, t)] = Buffer(t + 1, (char*)kv + kv.size());
-				pos = target + 1;
-			}
-		}while (target != nullptr);
 	}
+	m_uri = Buffer(pos + 1, target); // 修正：范围为 '/' 后到 '?' 之间
+	// 解析键值对
+	pos = target + 1;
+	const char* t{ nullptr };
+	do{
+		target = strchr(pos, '&');
+		if(target == nullptr){
+			t = strchr(pos, '=');
+			if(t == nullptr) return -4;
+			m_values[Buffer(pos, t)] = Buffer(t + 1);
+		} else{
+			Buffer kv(pos, target);
+			t = strchr(kv, '=');
+			if(t == nullptr) return -5;
+			m_values[Buffer(kv, t)] = Buffer(t + 1, (char*)kv + kv.size());
+			pos = target + 1;
+		}
+	} while(target != nullptr);
+
+
 	return 0;
 }
 

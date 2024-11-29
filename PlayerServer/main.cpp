@@ -106,11 +106,11 @@ int Main() {
 	ret = procLog.SetEntryFunction(CreateLogServer, &procLog);//启用日志模块
 	ERR_RETURN(ret, -1)
 
-	//启动子线程
+	//启动子进程
 	ret = procLog.CreateSubProcess();
 	ERR_RETURN(ret, -2)
+	//主进程中 初始化业务模块
 	CEPlayerServer business(2);
-
 	CServer server;
 	ret = server.Init(&business);
 	ERR_RETURN(ret, -3)
@@ -327,18 +327,20 @@ int TestHttpRequest() {
 	//printf("%s(%d):<%s> pid=%d\n", __FILE__, __LINE__, __FUNCTION__, getpid());
 	ret = procLog.SetEntryFunction(CreateLogServer, &procLog);//启用日志模块
 	ERR_RETURN(ret, -1)
-
-	//启动子线程
+	//启动Log子进程
 	ret = procLog.CreateSubProcess();
 	ERR_RETURN(ret, -2)
+
 	CEPlayerServer business(2);
 
 	CServer server;
 	ret = server.Init(&business);
+	//初始化并开启业务子进程
 	ERR_RETURN(ret, -3)
+
 	ret = server.Run();
 	ERR_RETURN(ret, -4)
-	TRACED("Main 函数结束!");
+	TRACED("TestHttpRequest 函数结束!");
 	return 0;
 }
 

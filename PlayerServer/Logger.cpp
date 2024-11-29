@@ -150,9 +150,9 @@ CLoggerServer::CLoggerServer()
 }
 
 int CLoggerServer::ThreadFunc() const {
-	printf("%s(%d):<%s> IsValid:%d\n", __FILE__, __LINE__, __FUNCTION__,m_thread.IsValid());
-	printf("%s(%d):<%s> m_epoll:%d\n", __FILE__, __LINE__, __FUNCTION__,(int)m_epoll);
-	printf("%s(%d):<%s> m_server:%p\n", __FILE__, __LINE__, __FUNCTION__,m_server);
+	//printf("%s(%d):<%s> IsValid:%d\n", __FILE__, __LINE__, __FUNCTION__,m_thread.IsValid());
+	//printf("%s(%d):<%s> m_epoll:%d\n", __FILE__, __LINE__, __FUNCTION__,(int)m_epoll);
+	//printf("%s(%d):<%s> m_server:%p\n", __FILE__, __LINE__, __FUNCTION__,m_server);
 
 	EP_EVENTS events;
 	std::map<int, CSocketBase*> mapClient;
@@ -189,21 +189,18 @@ int CLoggerServer::ThreadFunc() const {
 						}
 						mapClient[*pClient] = pClient;
 						//printf("%s(%d):<%s>\n", __FILE__, __LINE__, __FUNCTION__);
-
 					} else{ //客户端
 						//printf("%s(%d):<%s> ptr=%p\n", __FILE__, __LINE__, __FUNCTION__, events[i].data.ptr);
-
 						const auto pClient = static_cast<CSocketBase*>(events[i].data.ptr);
 						if(pClient != nullptr){
 							Buffer data(1024 * 1024);
 							const int r = pClient->Recv(data);
-							printf("%s(%d):<%s> Recv_r=%d\n", __FILE__, __LINE__, __FUNCTION__, r);
-
+							//printf("%s(%d):<%s> Recv_r=%d\n", __FILE__, __LINE__, __FUNCTION__, r);
 							if(r <= 0){ //失败
 								mapClient[*pClient] = nullptr;
 								delete pClient;
 							} else{
-								printf("%s(%d):<%s> WriteLog=%s\n", __FILE__, __LINE__, __FUNCTION__, static_cast<char*>(data));
+								//printf("%s(%d):<%s> WriteLog=%s\n", __FILE__, __LINE__, __FUNCTION__, static_cast<char*>(data));
 								WriteLog(data);
 							}
 						}

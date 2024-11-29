@@ -1,11 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="CHttpParser.cpp" />
     <ClCompile Include="DatabaseHelper.cpp" />
     <ClCompile Include="Epoll.cpp" />
-    <ClCompile Include="http_parser.c" />
-    <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Server.cpp" />
     <ClCompile Include="Thread.cpp" />
@@ -24,15 +21,21 @@
     <ClCompile Include="jsoncpp\json_writer.cpp">
       <Filter>jsoncpp</Filter>
     </ClCompile>
+    <ClCompile Include="CHttpParser.cpp">
+      <Filter>Http</Filter>
+    </ClCompile>
+    <ClCompile Include="http_parser.c">
+      <Filter>Http</Filter>
+    </ClCompile>
+    <ClCompile Include="Logger.cpp">
+      <Filter>Logger</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CHttpParser.h" />
     <ClInclude Include="DatabaseHelper.h" />
     <ClInclude Include="EPlayerServer.h" />
     <ClInclude Include="Epoll.h" />
     <ClInclude Include="Function.h" />
-    <ClInclude Include="http_parser.h" />
-    <ClInclude Include="Logger.h" />
     <ClInclude Include="Process.h" />
     <ClInclude Include="Public.h" />
     <ClInclude Include="Server.h" />
@@ -81,6 +84,15 @@
     <ClInclude Include="jsoncpp\writer.h">
       <Filter>jsoncpp</Filter>
     </ClInclude>
+    <ClInclude Include="CHttpParser.h">
+      <Filter>Http</Filter>
+    </ClInclude>
+    <ClInclude Include="http_parser.h">
+      <Filter>Http</Filter>
+    </ClInclude>
+    <ClInclude Include="Logger.h">
+      <Filter>Logger</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="sqlite3">
@@ -88,6 +100,12 @@
     </Filter>
     <Filter Include="jsoncpp">
       <UniqueIdentifier>{d9018464-879c-4be1-aaa7-9b2b3464f1fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Http">
+      <UniqueIdentifier>{1cc23bcf-69aa-44f3-8de0-8ddc72e982a1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Logger">
+      <UniqueIdentifier>{965f937b-65bb-4bf0-b1e7-fa333fd00973}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
