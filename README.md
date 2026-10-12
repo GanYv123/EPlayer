@@ -1,5 +1,17 @@
 # 加密播放器服务器(Linux端)
 
+[EPlayerClient](https://github.com/GanYv123/EPlayerClient) 的配套 Linux 后端，包含登录验证、HTTP 请求解析、数据库访问、日志、进程及线程池等模块。
+
+## 构建与运行
+
+1. 克隆仓库：`git clone https://github.com/GanYv123/EPlayer.git`。
+2. 使用 Visual Studio 打开 `PlayerServer.sln`。该解决方案为 Linux C++ 项目，需要安装“使用 C++ 的 Linux 开发”工作负载，并配置 Linux 构建目标。
+3. 在 Linux 目标上准备 C/C++ 编译工具链、MySQL 客户端开发库和 OpenSSL 开发库；项目还链接 `pthread`、`m`、`dl`。HTTP Parser、JsonCpp、SQLite 源码已包含在仓库中。
+4. 构建前检查 `PlayerServer/EPlayerServer.h` 的数据库连接配置，以及 `PlayerServer/Server.h` 的监听地址和端口，并让客户端配置与之匹配。
+5. 程序入口为 `PlayerServer/main.cpp` 中的 `TestHttpRequest()`，启动日志进程和业务服务器。运行时需要能连接所配置的 MySQL 数据库，并对当前工作目录具有日志写入权限。
+
+下面保留各模块的实现笔记。
+
 ---
 
 ## 日志模块的实现
